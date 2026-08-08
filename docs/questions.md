@@ -32,3 +32,19 @@
 ### Q6: How does Makefile standardization improve code quality across team environments?
 **Answer:** Makefile provides standardized command shortcuts (`make lint`, `make test`) that abstract underlying tooling details. This ensures developer environments match CI/CD runner environments exactly, preventing 'works on my machine' issues.
 
+---
+
+### Q7: Why create a dedicated `exceptions.py` module with a custom exception hierarchy instead of using built-in Python exceptions?
+**Answer:** A custom hierarchy rooted at `IngestionError` enables callers and orchestrators to catch subsystem-specific failures (`DocumentLoadError`, `CleanError`, `ChunkError`) without catching unrelated system exceptions. It standardizes error handling across pipeline stages and simplifies logging and audit reporting.
+
+---
+
+### Q8: How does separating `tests/unit/`, `tests/integration/`, and `tests/fixtures/` impact build pipelines and maintainability?
+**Answer:** It allows fast, isolated execution of lightweight unit tests during local development while isolating complex multi-component pipeline runs and synthetic test files, facilitating targeted test discovery and clear test reporting.
+
+---
+
+### Q9: Why export core exceptions and models directly from `ingestion.__init__`?
+**Answer:** It provides a clean public API contract for external consumers and CLI commands, avoiding deep internal module imports and reducing coupling to internal package layout.
+
+

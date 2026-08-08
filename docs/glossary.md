@@ -30,6 +30,15 @@ Automated checkpoint in CI/CD pipelines that blocks code merge/deployment if lin
 ### Fail-Fast Validation
 Validating environment variables and configuration schemas at application startup before running downstream workloads.
 
+### Package Hierarchy
+Structured python package layout separating data contracts, loaders, transformations, chunkers, quality audit monitors, and CLI presentation.
+
+### Custom Exception Hierarchy
+Object-oriented error classification allowing granular error catching (e.g. `DocumentLoadError`, `ChunkError`) while maintaining a single root exception (`IngestionError`).
+
+### Test Runner Registration
+Structuring tests into standard Pytest module hierarchies (`tests/unit/`, `tests/integration/`) for automated discovery and execution in test runners.
+
 ---
 
 ## 🤖 2. RAG Ingestion & Document Processing

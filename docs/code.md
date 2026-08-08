@@ -21,6 +21,7 @@
 - **`tests/`:** Unit and integration test suite.
   - **`tests/unit/test_env.py`:** Unit tests verifying environment settings, logging, and core package imports.
   - **`tests/unit/test_tooling.py`:** Unit tests validating ruff.toml, pyproject.toml MyPy strict configuration, and Makefile shortcuts.
+  - **`tests/unit/test_structure.py`:** Unit tests validating package directory structure, test subdirectories, custom exception hierarchy, and exports.
 
 ---
 
@@ -36,7 +37,25 @@
 - **`setup_logging(log_level: str = "INFO") -> None`:** Initializes `structlog` processors for ISO-8601 timestamps, log level tagging, context variable merging, and JSON rendering.
 - **`get_logger(name: str = "ingestion") -> Any`:** Factory function returning a bound structured logger instance.
 
+### Custom Exception Hierarchy & Structure
+
+#### `src/ingestion/exceptions.py`
+- **`IngestionError(Exception)`:** Base exception for all ingestion pipeline errors.
+- **`DocumentLoadError(IngestionError)`:** Exception raised when loading or parsing a source document fails.
+- **`CleanError(IngestionError)`:** Exception raised when text cleaning or normalization encounters an error.
+- **`ChunkError(IngestionError)`:** Exception raised during document text chunking operations.
+- **`AuditError(IngestionError)`:** Exception raised when quality audit checks or thresholds fail.
+
+#### `src/ingestion/__init__.py`
+- **Package Root:** Re-exports core domain models (`Document`, `Chunk`, `IngestionMetrics`, `AuditReport`) and custom exception classes (`IngestionError`, `DocumentLoadError`, `CleanError`, `ChunkError`, `AuditError`) in `__all__`.
+
 ### Quality Assurance & Tooling Tests
+
+#### `tests/unit/test_structure.py`
+- **`test_package_directory_structure_exists()`:** Verifies all required package files exist in `src/ingestion/`.
+- **`test_test_directories_exist()`:** Verifies required test subdirectories (`unit/`, `integration/`, `fixtures/`) exist.
+- **`test_custom_exception_hierarchy()`:** Validates custom exception class hierarchy and inheritance.
+- **`test_package_exports()`:** Confirms package root exports all core models and exception symbols.
 
 #### `tests/unit/test_tooling.py`
 - **`test_ruff_config_exists_and_valid()`:** Validates existence and parsing of standalone `ruff.toml` linting rules.
