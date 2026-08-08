@@ -7,6 +7,7 @@ from ingestion.chunkers import (
     RecursiveStructuralChunker,
 )
 from ingestion.cleaner import TextCleaner
+from ingestion.detector import OrphanBlockDetector, StructuralBlock
 from ingestion.exceptions import (
     AuditError,
     ChunkError,
@@ -76,6 +77,8 @@ __all__ = [
     "BaseChunker",
     "FixedSizeChunker",
     "RecursiveStructuralChunker",
+    "OrphanBlockDetector",
+    "StructuralBlock",
 ]
 
 

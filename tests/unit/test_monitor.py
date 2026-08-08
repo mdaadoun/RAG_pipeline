@@ -63,7 +63,6 @@ def test_ingestion_monitor_orphan_detection() -> None:
         "| Val1 | Val2 |\n"
         "Footer text after table"
     )
-    doc = Document(id="d3", file_path="table.md", content=table_text)
 
     # Chunk 1 cuts table mid-way
     split_pos = table_text.find("| Val1")
@@ -109,7 +108,6 @@ def test_audit_document_empty_and_errors() -> None:
 def test_duplicate_char_ratio_calculation() -> None:
     """Verify duplicate character ratio computation for overlapping chunks."""
     doc_content = "0123456789"
-    doc = Document(id="d6", file_path="overlap.txt", content=doc_content)
     # Chunk 1: 0-7, Chunk 2: 3-10 (overlap of 4 chars: '3456')
     c1 = Chunk(
         id="c1",

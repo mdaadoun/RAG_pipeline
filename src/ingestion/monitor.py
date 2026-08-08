@@ -1,8 +1,8 @@
 """Ingestion quality monitor and information loss auditor engine."""
 
 from datetime import datetime, timezone
-import re
 
+from ingestion.detector import OrphanBlockDetector
 from ingestion.models import (
     AuditReport,
     Chunk,
@@ -26,32 +26,11 @@ class IngestionMonitor:
         self.min_chunk_size = min_chunk_size
         self.max_overlap_tolerance = max_overlap_tolerance
         self.coverage_threshold = coverage_threshold
+        self.orphan_detector = OrphanBlockDetector()
 
     def _detect_orphan_blocks(self, cleaned_text: str, chunks: list[Chunk]) -> int:
         """Detect Markdown tables or code blocks split across chunk boundaries."""
-        if not cleaned_text or not chunks:
-            return 0
-
-        orphan_count = 0
-        patterns = [
-            re.compile(r"(?:^|\n)(\|[^\n]+\|\n?)+"),
-            re.compile(r"```[\s\S]*?```|~~~[\s\S]*?~~~"),
-        ]
-
-        for pattern in patterns:
-            for match in pattern.finditer(cleaned_text):
-                m_start, m_end = match.span()
-                intersecting = [
-                    c for c in chunks if c.start_char < m_end and c.end_char > m_start
-                ]
-                if len(intersecting) > 1:
-                    is_preserved = any(
-                        c.start_char <= m_start and c.end_char >= m_end for c in intersecting
-                    )
-                    if not is_preserved:
-                        orphan_count += 1
-
-        return orphan_count
+        return self.orphan_detector.detect_orphan_blocks(cleaned_text, chunks)
 
     def audit_document(
         self,

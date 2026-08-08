@@ -165,3 +165,12 @@ The difference between total source document tokens and aggregate tokens across 
 
 ### Undersized Chunk
 A chunk whose total token or character count falls below a specified minimum threshold.
+
+### Orphan Block
+A Markdown structural entity (table, code block, math block) split across chunk boundaries such that no single chunk contains the complete block.
+
+### Structural Block Range
+The exact character start and end index span (`[start_char, end_char]`) of a contiguous structural element within cleaned text.
+
+### Block Preservation
+The condition where at least one generated chunk entirely spans a structural block range without boundary truncation.

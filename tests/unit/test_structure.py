@@ -23,6 +23,7 @@ def test_package_directory_structure_exists() -> None:
         "cleaner.py",
         "tokenizers.py",
         "chunkers.py",
+        "detector.py",
         "monitor.py",
         "pipeline.py",
         "cli.py",
@@ -94,6 +95,8 @@ def test_package_exports() -> None:
         "BaseChunker",
         "FixedSizeChunker",
         "RecursiveStructuralChunker",
+        "OrphanBlockDetector",
+        "StructuralBlock",
     ]
     for symbol in expected_exports:
         assert hasattr(ingestion, symbol), f"Package missing export: {symbol}"

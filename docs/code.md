@@ -171,14 +171,27 @@
 - **`test_ingestion_report_model()`:** Ensures `IngestionReport` timestamp auto-generation, list nesting, and immutability.
 - **`test_audit_report_and_metrics_immutability()`:** Verifies immutability of legacy `IngestionMetrics` and `AuditReport` models.
 
-### Ingestion Quality Monitor & Audit Engine
+#### `src/ingestion/detector.py`
+- **`StructuralBlock`:** Immutable NamedTuple recording `block_type`, `start_char`, `end_char`, and block string `content`.
+- **`OrphanBlockDetector.__init__()`:** Initializes regex patterns for Markdown pipe tables (`(?:^|\n)(\|[^\n]+\|\n?)+`), fenced code blocks (``` and ~~~), and math blocks (`$$`).
+- **`OrphanBlockDetector.extract_structural_blocks(text: str) -> list[StructuralBlock]`:** Scans source text and extracts structural block instances with exact character start and end index spans.
+- **`OrphanBlockDetector.detect_orphan_blocks(cleaned_text: str, chunks: list[Chunk]) -> int`:** Finds all structural blocks, checks chunk intersection and single-chunk full enclosure (`c.start_char <= block.start_char and c.end_char >= block.end_char`), and returns the total count of severed orphan blocks.
+- **`OrphanBlockDetector.is_orphan_chunk(chunk: Chunk, cleaned_text: str) -> bool`:** Determines whether a specific chunk contains a severed fragment of a structural element.
 
 #### `src/ingestion/monitor.py`
-- **`IngestionMonitor(__init__)`:** Configures threshold boundaries for `min_chunk_size` (default 20), `max_overlap_tolerance` (default 0.05), and `coverage_threshold` (default 0.98).
-- **`IngestionMonitor._detect_orphan_blocks(cleaned_text: str, chunks: list[Chunk]) -> int`:** Scans cleaned source text with regular expressions for Markdown tables (`^\|.*\|$`) and code blocks (``` / ~~~), verifying whether any structural block spans across chunk boundaries without complete preservation in a single chunk.
+- **`IngestionMonitor(__init__)`:** Configures threshold boundaries for `min_chunk_size` (default 20), `max_overlap_tolerance` (default 0.05), and `coverage_threshold` (default 0.98), instantiating `OrphanBlockDetector`.
+- **`IngestionMonitor._detect_orphan_blocks(cleaned_text: str, chunks: list[Chunk]) -> int`:** Delegates structural block scanning to `OrphanBlockDetector.detect_orphan_blocks()`.
 - **`IngestionMonitor.audit_document(document_id, source_path, cleaned_text, chunks, errors, source_tokens) -> DocumentReport`:** Audits a single document, calculating unique character coverage set, duplicate character ratio, orphan block count, undersized chunk ratio, and status (`"ok"`, `"warning"`, `"error"`).
 - **`IngestionMonitor.audit(docs, chunks, strategy_name, errors) -> AuditReport`:** Evaluates retention metrics and orphan counts across a collection of documents, returning an `AuditReport` with global `IngestionMetrics`.
 - **`IngestionMonitor.create_ingestion_report(corpus_path, strategy_used, doc_reports) -> IngestionReport`:** Aggregates per-document audit reports into a structured `IngestionReport` deliverable with overall status and blocking alert flags.
+
+#### `tests/unit/test_detector.py`
+- **`test_extract_structural_blocks()`:** Verifies regex extraction of table, code block, and math block character spans.
+- **`test_orphan_block_detector_table_split()`:** Validates that Markdown tables split across chunk boundaries return `orphan_count == 1`.
+- **`test_orphan_block_detector_table_intact()`:** Validates that tables fully enclosed in a single chunk return `orphan_count == 0`.
+- **`test_orphan_block_detector_code_block_split()`:** Ensures fenced code blocks severed mid-function are flagged as orphan blocks.
+- **`test_is_orphan_chunk()`:** Verifies `is_orphan_chunk` identifies individual chunks containing severed structural fragments.
+- **`test_orphan_detector_empty_and_edge_cases()`:** Ensures detector handles empty input text or empty chunk lists gracefully.
 
 #### `tests/unit/test_monitor.py`
 - **`test_ingestion_monitor_pass()`:** Verifies monitor produces PASSED status when character coverage ratio $\ge 0.98$ and zero orphan blocks exist.
