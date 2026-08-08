@@ -202,3 +202,19 @@
 ### Q40: What is the trade-off between regex structural scanning and Markdown AST parsing?
 **Answer:** Regex scanning is lightweight, zero-dependency, and extremely fast, ideal for standard RAG audit pipeline gates. AST parsing handles arbitrary nested structures but introduces external dependency weight and execution overhead.
 
+---
+
+### Q41: Why must token delta calculation compensate for chunk overlaps in a RAG ingestion pipeline?
+**Answer:** Sliding-window and structural chunkers introduce intentional overlap between adjacent chunks. Without subtracting overlap token counts, the cumulative sum of chunk tokens would artificially exceed source tokens, triggering false-positive audit alerts.
+
+---
+
+### Q42: How does `IngestionMonitor` assess undersized chunks and why is it an informational metric?
+**Answer:** It computes the ratio of chunks with token counts below `min_chunk_size`. It is kept informational because short document ends or brief section headings legitimately yield small chunks without signaling data corruption.
+
+---
+
+### Q43: How does `IngestionMonitor` support multi-model token counting abstractions?
+**Answer:** `IngestionMonitor` accepts dependency injection of `BaseTokenizer` instances (e.g. `GeminiEncoder`, `TiktokenEncoder`, `HeuristicTokenizer`), enabling model-agnostic token counting and exact metric calculation.
+
+

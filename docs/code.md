@@ -179,9 +179,10 @@
 - **`OrphanBlockDetector.is_orphan_chunk(chunk: Chunk, cleaned_text: str) -> bool`:** Determines whether a specific chunk contains a severed fragment of a structural element.
 
 #### `src/ingestion/monitor.py`
-- **`IngestionMonitor(__init__)`:** Configures threshold boundaries for `min_chunk_size` (default 20), `max_overlap_tolerance` (default 0.05), and `coverage_threshold` (default 0.98), instantiating `OrphanBlockDetector`.
+- **`IngestionMonitor(__init__)`:** Configures threshold boundaries for `min_chunk_size` (default 20), `max_overlap_tolerance` (default 0.05), `coverage_threshold` (default 0.98), and optional injected `BaseTokenizer`, instantiating `OrphanBlockDetector`.
 - **`IngestionMonitor._detect_orphan_blocks(cleaned_text: str, chunks: list[Chunk]) -> int`:** Delegates structural block scanning to `OrphanBlockDetector.detect_orphan_blocks()`.
-- **`IngestionMonitor.audit_document(document_id, source_path, cleaned_text, chunks, errors, source_tokens) -> DocumentReport`:** Audits a single document, calculating unique character coverage set, duplicate character ratio, orphan block count, undersized chunk ratio, and status (`"ok"`, `"warning"`, `"error"`).
+- **`IngestionMonitor._compute_token_delta(cleaned_text: str, chunks: list[Chunk], source_tokens: int | None) -> int`:** Calculates net non-overlapping chunk tokens by subtracting overlap token counts and computes source token delta.
+- **`IngestionMonitor.audit_document(document_id, source_path, cleaned_text, chunks, errors, source_tokens) -> DocumentReport`:** Audits a single document, calculating unique character coverage set, duplicate character ratio, orphan block count, token count delta, undersized chunk ratio, and status (`"ok"`, `"warning"`, `"error"`).
 - **`IngestionMonitor.audit(docs, chunks, strategy_name, errors) -> AuditReport`:** Evaluates retention metrics and orphan counts across a collection of documents, returning an `AuditReport` with global `IngestionMetrics`.
 - **`IngestionMonitor.create_ingestion_report(corpus_path, strategy_used, doc_reports) -> IngestionReport`:** Aggregates per-document audit reports into a structured `IngestionReport` deliverable with overall status and blocking alert flags.
 
@@ -200,6 +201,10 @@
 - **`test_audit_document_empty_and_errors()`:** Tests `audit_document` behavior on empty document strings and explicitly passed error lists.
 - **`test_duplicate_char_ratio_calculation()`:** Validates duplicate character ratio computation for overlapping chunk spans.
 - **`test_create_ingestion_report()`:** Validates creation and aggregation of structured `IngestionReport` objects.
+- **`test_token_count_delta_computation_exact()`:** Verifies exact token count delta calculation accounting for chunk overlaps.
+- **`test_undersized_chunks_ratio_calculation()`:** Validates undersized chunk ratio computation against `min_chunk_size`.
+- **`test_create_ingestion_report_with_blocking_alerts()`:** Verifies `IngestionReport` correctly sets `has_blocking_alerts` when error documents exist.
+
 
 ### Quality Assurance & Tooling Tests
 

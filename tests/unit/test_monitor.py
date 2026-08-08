@@ -143,3 +143,72 @@ def test_create_ingestion_report() -> None:
     assert ing_report.total_chunks == 0
     assert not ing_report.has_blocking_alerts
 
+
+def test_token_count_delta_computation_exact() -> None:
+    """Verify exact token count delta calculation accounting for chunk overlaps."""
+    monitor = IngestionMonitor(tokenizer="heuristic")
+    assert monitor.tokenizer is not None
+    doc_text = "This is a simple test sentence for token delta computation."
+    src_tokens = monitor.tokenizer.count_tokens(doc_text)
+
+    c1 = Chunk(
+        id="c1",
+        doc_id="d1",
+        chunk_index=0,
+        content=doc_text[:30],
+        start_char=0,
+        end_char=30,
+        token_count=monitor.tokenizer.count_tokens(doc_text[:30]),
+    )
+    c2 = Chunk(
+        id="c2",
+        doc_id="d1",
+        chunk_index=1,
+        content=doc_text[17:],
+        start_char=17,
+        end_char=len(doc_text),
+        token_count=monitor.tokenizer.count_tokens(doc_text[17:]),
+    )
+
+    doc_report = monitor.audit_document("d1", "doc.txt", doc_text, [c1, c2], source_tokens=src_tokens)
+    assert doc_report.token_count_delta == 0
+
+
+
+
+def test_undersized_chunks_ratio_calculation() -> None:
+    """Verify calculation of undersized chunks ratio against min_chunk_size."""
+    monitor = IngestionMonitor(min_chunk_size=50)
+    c1 = Chunk(
+        id="c1",
+        doc_id="d1",
+        chunk_index=0,
+        content="Small chunk",
+        start_char=0,
+        end_char=11,
+        token_count=10,
+    )
+    c2 = Chunk(
+        id="c2",
+        doc_id="d1",
+        chunk_index=1,
+        content="Large chunk " * 10,
+        start_char=12,
+        end_char=132,
+        token_count=100,
+    )
+
+    doc_report = monitor.audit_document("d1", "doc.txt", "Small chunk Large chunk " * 10, [c1, c2])
+    assert doc_report.undersized_chunks_ratio == 0.5
+
+
+def test_create_ingestion_report_with_blocking_alerts() -> None:
+    """Verify IngestionReport flags blocking alerts when errors or orphans exist."""
+    monitor = IngestionMonitor()
+    d1_report = monitor.audit_document("d1", "f1.md", "content", [], errors=["File open failure"])
+    ing_report = monitor.create_ingestion_report("data/input", "fixed", [d1_report])
+
+    assert ing_report.documents_in_error == 1
+    assert ing_report.has_blocking_alerts is True
+
+

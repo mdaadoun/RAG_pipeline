@@ -174,3 +174,10 @@ The exact character start and end index span (`[start_char, end_char]`) of a con
 
 ### Block Preservation
 The condition where at least one generated chunk entirely spans a structural block range without boundary truncation.
+
+### Overlap Compensation
+Audit technique that subtracts token counts of overlapping character regions between consecutive chunks to prevent false expansion metrics during token loss audit.
+
+### Undersized Chunks Ratio (`undersized_chunks_ratio`)
+The proportion of generated document chunks whose token count is lower than configured minimum chunk size threshold (`min_chunk_size`).
+
