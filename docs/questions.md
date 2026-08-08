@@ -107,4 +107,20 @@
 ### Q21: How does `TextCleaner` enforce domain exception shielding for pipeline resilience?
 **Answer:** `TextCleaner` validates input types, raises `CleanError` with structured details for invalid inputs, and catches any runtime unexpected failures to wrap them into `CleanError` instances.
 
+---
+
+### Q22: Why use placeholder token substitution instead of line-by-line conditional parsing during text cleaning?
+**Answer:** Placeholder token substitution decouples text cleaning operations (NFKC normalization, control byte stripping, whitespace capping, boilerplate deduplication) from block syntax rules. Normalization operations can process the unshielded text cleanly without risking destructive modifications to code block indentation or Markdown table vertical alignments.
+
+---
+
+### Q23: How does the shielding engine handle nested or overlapping protected blocks (e.g. pipe symbols inside fenced code blocks)?
+**Answer:** The regex engine evaluates high-priority blocks (fenced code blocks) first and records their byte span indices. When scanning for Markdown table pipe patterns, any match whose start/end offsets overlap with an already shielded code block range is skipped, preventing code logic containing `|` operators from being misclassified as tables.
+
+---
+
+### Q24: What guarantees that placeholder tokens do not collide with actual user document text?
+**Answer:** Each cleaning invocation generates a fresh 8-character hex string from `uuid.uuid4()`. The placeholder string follows the template `___SHIELDED_<uuid>_<idx>___`, rendering accidental collisions with document content statistically impossible.
+
+
 

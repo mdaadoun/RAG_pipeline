@@ -106,4 +106,11 @@ Normalization Form KC (Compatibility Decomposition followed by Canonical Composi
 ### Boilerplate Line Deduplication
 Filtering algorithm removing identical non-empty lines that repeat more than N times across document content to reduce token noise.
 
+### UUID-Prefixed Placeholder Token
+A unique token format (`___SHIELDED_<uuid>_<idx>___`) inserted in place of protected text regions to guarantee zero collision with document contents.
+
+### Table Pipe Regex Shielding
+Regular expression matching pattern (`^\|.*\|$) that detects contiguous rows of Markdown pipe-delimited tabular data.
+
+
 

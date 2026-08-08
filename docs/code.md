@@ -95,6 +95,8 @@
 - **`test_structural_protection_shielding()`:** Verifies code blocks and Markdown tables preserve exact formatting, indentation, and newlines during cleaning.
 - **`test_cleaner_error_handling()`:** Ensures `CleanError` is raised on invalid non-string input types.
 - **`test_cleaner_configurable_options()`:** Validates behavior when unicode normalization, newline capping, or boilerplate deduplication are disabled.
+- **`test_table_pipe_shielding()`:** Verifies lines matching `^\|.*\|$` are shielded from whitespace capping and boilerplate line deduplication.
+- **`test_tilde_code_block_shielding()`:** Verifies `~~~` fenced code blocks are extracted and shielded correctly.
 
 
 ### Document Loader Unit Tests
@@ -108,6 +110,7 @@
 - **`test_loader_file_not_found()`:** Verifies `DocumentLoadError` is raised when target file path does not exist.
 - **`test_loader_invalid_encoding()`:** Verifies `DocumentLoadError` is raised when reading non-UTF-8 binary data.
 - **`test_get_loader_factory()`:** Tests factory routing by file extension and error handling for unsupported formats.
+- **`test_loader_structural_shielding_integration()`:** Verifies loading Markdown fixtures containing tables and code blocks preserves exact formatting after cleaning.
 
 ### Domain Model Unit Tests
 

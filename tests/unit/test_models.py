@@ -27,7 +27,7 @@ def test_base_domain_model_immutability_and_extra_forbid() -> None:
     assert model.name == "test"
 
     with pytest.raises(ValidationError):
-        model.name = "changed"  # type: ignore[misc]
+        setattr(model, "name", "changed")  # noqa: B010
 
     with pytest.raises(ValidationError):
         SampleModel(name="test", unexpected_field=123)  # type: ignore[call-arg]
@@ -35,8 +35,8 @@ def test_base_domain_model_immutability_and_extra_forbid() -> None:
 
 def test_strategy_type_enum() -> None:
     """Verify StrategyType enum values and string compatibility."""
-    assert StrategyType.FIXED == "fixed"
-    assert StrategyType.RECURSIVE == "recursive"
+    assert StrategyType.FIXED.value == "fixed"
+    assert StrategyType.RECURSIVE.value == "recursive"
     assert StrategyType("fixed") == StrategyType.FIXED
     assert StrategyType("recursive") == StrategyType.RECURSIVE
 
@@ -57,7 +57,7 @@ def test_ingestion_config_defaults_and_validation() -> None:
         IngestionConfig(coverage_threshold=1.5)
 
     with pytest.raises(ValidationError):
-        config.chunk_size = 1024  # type: ignore[misc]
+        setattr(config, "chunk_size", 1024)  # noqa: B010
 
 
 def test_loaded_document_and_alias() -> None:
@@ -76,7 +76,7 @@ def test_loaded_document_and_alias() -> None:
     assert doc.metadata["author"] == "Alice"
 
     with pytest.raises(ValidationError):
-        doc.content = "New content"  # type: ignore[misc]
+        setattr(doc, "content", "New content")  # noqa: B010
 
     with pytest.raises(ValidationError):
         LoadedDocument(id="d1", file_path="p", content="c", extra_attr="invalid")  # type: ignore[call-arg]
@@ -99,7 +99,7 @@ def test_chunk_model_properties_and_immutability() -> None:
     assert chunk.is_orphan_block is False
 
     with pytest.raises(ValidationError):
-        chunk.content = "Modified"  # type: ignore[misc]
+        setattr(chunk, "content", "Modified")  # noqa: B010
 
     with pytest.raises(ValidationError):
         Chunk(
@@ -126,7 +126,7 @@ def test_document_report_model() -> None:
     assert report.errors == []
 
     with pytest.raises(ValidationError):
-        report.status = "error"  # type: ignore[misc]
+        setattr(report, "status", "error")  # noqa: B010
 
 
 def test_ingestion_report_model() -> None:
@@ -144,7 +144,7 @@ def test_ingestion_report_model() -> None:
     assert report.execution_timestamp is not None
 
     with pytest.raises(ValidationError):
-        report.total_chunks = 10  # type: ignore[misc]
+        setattr(report, "total_chunks", 10)  # noqa: B010
 
 
 def test_audit_report_and_metrics_immutability() -> None:
@@ -167,4 +167,4 @@ def test_audit_report_and_metrics_immutability() -> None:
     assert audit.metrics.total_docs == 1
 
     with pytest.raises(ValidationError):
-        metrics.status = "FAILED"  # type: ignore[misc]
+        setattr(metrics, "status", "FAILED")  # noqa: B010

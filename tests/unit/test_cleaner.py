@@ -99,3 +99,32 @@ def test_cleaner_configurable_options() -> None:
     cleaned = cleaner.clean(raw)
     assert cleaned == raw
 
+
+def test_table_pipe_shielding() -> None:
+    """Verify lines matching ^\\|.*\\|$ are shielded from whitespace capping and boilerplate dedup."""
+    cleaner = TextCleaner(boilerplate_threshold=1, max_newlines=1)
+    raw = (
+        "| Header X | Header Y |\n"
+        "| --- | --- |\n"
+        "| Row 1 | Val 1 |\n\n\n"
+        "| Row 1 | Val 1 |\n"
+    )
+    cleaned = cleaner.clean(raw)
+    assert "| Header X | Header Y |" in cleaned
+    assert "| Row 1 | Val 1 |" in cleaned
+
+
+def test_tilde_code_block_shielding() -> None:
+    """Verify tilde fenced code blocks ~~~ are extracted and shielded."""
+    cleaner = TextCleaner(boilerplate_threshold=1)
+    raw = (
+        "~~~bash\n"
+        "echo 'hello'\n"
+        "~~~\n"
+    )
+    protected = TextCleaner.extract_protected_blocks(raw)
+    assert len(protected) == 1
+    assert protected[0][2] == "code_block"
+    cleaned = cleaner.clean(raw)
+    assert "echo 'hello'" in cleaned
+

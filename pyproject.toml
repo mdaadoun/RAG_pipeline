@@ -43,6 +43,7 @@ ignore = ["E501", "UP017"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+mypy_path = "src"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true

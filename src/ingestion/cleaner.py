@@ -88,13 +88,15 @@ class TextCleaner:
         for match in re.finditer(r"(```[\s\S]*?```|~~~[\s\S]*?~~~)", text):
             protected.append((match.start(), match.end(), "code_block"))
 
-        # Markdown tables (| ... |)
-        table_pattern = r"(?:(?:^|\n)\|[^\n]+\|\n\|[-:| ]+\|\n(?:\|[^\n]+\|\n?)+)"
+        # Markdown tables matching lines starting with | and ending with | (^\|.*\|$)
+        table_pattern = r"(?:^|\n)([ \t]*\|.*\|[ \t]*(?:\n[ \t]*\|.*\|[ \t]*)*)"
         for match in re.finditer(table_pattern, text):
-            start, end = match.start(), match.end()
-            if text[start] == "\n" and start < end:
-                start += 1
-            if not any(p_start <= start < p_end for p_start, p_end, _ in protected):
+            start = match.start(1)
+            end = match.end(1)
+            if not any(
+                (p_start <= start < p_end) or (p_start < end <= p_end) or (start <= p_start and end >= p_end)
+                for p_start, p_end, _ in protected
+            ):
                 protected.append((start, end, "table"))
 
         protected.sort(key=lambda item: item[0])

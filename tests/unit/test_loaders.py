@@ -18,8 +18,7 @@ from ingestion.loaders import (
 def test_document_loader_abc_instantiation() -> None:
     """Verify DocumentLoader ABC cannot be instantiated directly."""
     with pytest.raises(TypeError):
-        DocumentLoader()
-
+        DocumentLoader()  # type: ignore[abstract]
 
 
 def test_markdown_loader(fixtures_dir: Path) -> None:
@@ -101,4 +100,19 @@ def test_get_loader_factory(fixtures_dir: Path, tmp_path: Path) -> None:
     with pytest.raises(DocumentLoadError) as exc_info:
         get_loader(pdf_file)
     assert "Unsupported file format" in str(exc_info.value)
+
+
+def test_loader_structural_shielding_integration(fixtures_dir: Path) -> None:
+    """Verify loading Markdown fixture with tables and code blocks preserves formatting after cleaning."""
+    from ingestion.cleaner import TextCleaner
+
+    loader = MarkdownLoader(fixtures_dir / "03_table_split.md")
+    doc = loader.load()
+    cleaner = TextCleaner(boilerplate_threshold=2)
+    cleaned = cleaner.clean(doc.content)
+
+    assert "| Metric | Target | Status |" in cleaned
+    assert "| Coverage | 98% | Passing |" in cleaned
+    assert "```python" in cleaned
+    assert 'return "Code block protection"' in cleaned
 
