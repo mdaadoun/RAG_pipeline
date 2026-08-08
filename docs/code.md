@@ -52,7 +52,7 @@
 - **`IngestionMetrics(BaseDomainModel)` & `AuditReport(BaseDomainModel)`:** Legacy aggregate statistical metrics models maintained for backward compatibility.
 
 #### `src/ingestion/__init__.py`
-- **Package Root:** Re-exports core domain models (`BaseDomainModel`, `StrategyType`, `IngestionConfig`, `LoadedDocument`, `Document`, `Chunk`, `DocumentReport`, `IngestionMetrics`, `IngestionReport`, `AuditReport`) and custom exception classes (`IngestionError`, `DocumentLoadError`, `CleanError`, `ChunkError`, `AuditError`) in `__all__`.
+- **Package Root:** Re-exports core domain models (`BaseDomainModel`, `StrategyType`, `IngestionConfig`, `LoadedDocument`, `Document`, `Chunk`, `DocumentReport`, `IngestionMetrics`, `IngestionReport`, `AuditReport`), custom exceptions (`IngestionError`, `DocumentLoadError`, `CleanError`, `ChunkError`, `AuditError`), and document loaders (`DocumentLoader`, `TextLoader`, `MarkdownLoader`, `TextMarkdownLoader`, `get_loader`, `compute_document_id`) in `__all__`.
 
 ### Custom Exception Hierarchy & Structure
 
@@ -63,6 +63,28 @@
 - **`CleanError(IngestionError)`:** Exception raised when text cleaning or normalization encounters an error.
 - **`ChunkError(IngestionError)`:** Exception raised during document text chunking operations.
 - **`AuditError(IngestionError)`:** Exception raised when quality audit checks or thresholds fail.
+
+### Document Loaders & Format Ingestion
+
+#### `src/ingestion/loaders.py`
+- **`compute_document_id(file_name: str, content: str) -> str`:** Computes a deterministic SHA-256 hex digest (`doc_<hash>`) derived from UTF-8 string `f"{file_name}:{content}"`.
+- **`DocumentLoader(ABC)`:** Abstract base class for file loaders providing path resolution (`_resolve_path`) and content reading (`_read_content`) with `DocumentLoadError` exception shielding.
+- **`TextLoader(DocumentLoader)`:** Concrete loader parsing `.txt` plain text files into `LoadedDocument` domain objects.
+- **`MarkdownLoader(DocumentLoader)`:** Concrete loader parsing `.md`/`.markdown` files into `LoadedDocument` domain objects.
+- **`TextMarkdownLoader(DocumentLoader)`:** Generic document loader supporting auto-detection of text vs markdown formats.
+- **`get_loader(file_path: str | Path) -> DocumentLoader`:** Factory function returning the concrete loader instance based on file extension, or raising `DocumentLoadError` for unsupported file extensions.
+
+### Document Loader Unit Tests
+
+#### `tests/unit/test_loaders.py`
+- **`test_document_loader_abc_instantiation()`:** Verifies `DocumentLoader` ABC cannot be directly instantiated.
+- **`test_markdown_loader()`:** Validates `MarkdownLoader` content extraction and metadata properties.
+- **`test_text_loader()`:** Validates `TextLoader` content extraction and metadata properties.
+- **`test_text_markdown_loader_auto_detect()`:** Tests dynamic format auto-detection for text and markdown documents.
+- **`test_deterministic_document_id()`:** Verifies deterministic SHA-256 document ID generation.
+- **`test_loader_file_not_found()`:** Verifies `DocumentLoadError` is raised when target file path does not exist.
+- **`test_loader_invalid_encoding()`:** Verifies `DocumentLoadError` is raised when reading non-UTF-8 binary data.
+- **`test_get_loader_factory()`:** Tests factory routing by file extension and error handling for unsupported formats.
 
 ### Domain Model Unit Tests
 

@@ -59,7 +59,7 @@ def test_custom_exception_hierarchy() -> None:
 
 
 def test_package_exports() -> None:
-    """Verify root ingestion package exports core domain models and exceptions."""
+    """Verify root ingestion package exports core domain models, exceptions, and loaders."""
     expected_exports = [
         "BaseDomainModel",
         "StrategyType",
@@ -76,6 +76,13 @@ def test_package_exports() -> None:
         "CleanError",
         "ChunkError",
         "AuditError",
+        "DocumentLoader",
+        "TextLoader",
+        "MarkdownLoader",
+        "TextMarkdownLoader",
+        "get_loader",
+        "compute_document_id",
     ]
     for symbol in expected_exports:
         assert hasattr(ingestion, symbol), f"Package missing export: {symbol}"
+

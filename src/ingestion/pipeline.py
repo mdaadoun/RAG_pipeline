@@ -5,7 +5,8 @@ from pathlib import Path
 from config.logging import get_logger
 from ingestion.chunkers import BaseChunker, FixedSizeChunker, RecursiveStructuralChunker
 from ingestion.cleaner import TextCleaner
-from ingestion.loaders import MarkdownLoader, TextLoader
+from ingestion.exceptions import DocumentLoadError
+from ingestion.loaders import get_loader
 from ingestion.models import AuditReport, Chunk, Document
 from ingestion.monitor import IngestionMonitor
 from ingestion.utils.json_utils import save_audit_report, save_chunks_jsonl
@@ -50,11 +51,9 @@ class IngestionPipeline:
         for file in files:
             if not file.is_file():
                 continue
-            if file.suffix in [".md", ".markdown"]:
-                loader = MarkdownLoader(file)
-            elif file.suffix in [".txt", ".text"]:
-                loader = TextLoader(file)
-            else:
+            try:
+                loader = get_loader(file)
+            except DocumentLoadError:
                 continue
 
             doc = loader.load()

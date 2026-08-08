@@ -76,3 +76,19 @@
 
 ### Q15: How are backward compatibility and domain evolvability achieved when refactoring models?
 **Answer:** By creating alias mappings (e.g. `Document = LoadedDocument`) and property getters (e.g. `Chunk.document_id` pointing to `doc_id`), new strict schemas can be introduced without breaking pre-existing code that relies on legacy attribute names.
+
+---
+
+### Q16: Why replace random UUID document identifiers with SHA-256 digest-based identifiers in the document loader?
+**Answer:** Random UUIDs introduce non-determinism across pipeline runs, making audit metric tracking, chunk comparisons, and cache deduplication impossible. SHA-256 digests computed over file name and raw text ensure identical input documents produce identical document IDs (`doc_<hash>`), enabling idempotent ingestion and reproducible information loss audits.
+
+---
+
+### Q17: How does the `DocumentLoader` abstraction enforce layer isolation and open-closed principles in the ingestion architecture?
+**Answer:** Downstream pipeline modules (cleaners, chunkers, monitors, orchestrators) depend strictly on the abstract `DocumentLoader` interface and domain model `LoadedDocument`. Concrete loaders (`TextLoader`, `MarkdownLoader`, `TextMarkdownLoader`) encapsulate format-specific reading logic. Adding support for new formats (e.g. PDF, HTML) only requires implementing a new loader subclass without modifying downstream code.
+
+---
+
+### Q18: How are file system reading failures and encoding errors handled across the loader boundary?
+**Answer:** Low-level file system exceptions like `FileNotFoundError`, `UnicodeDecodeError`, or `OSError` are trapped inside `DocumentLoader._read_content` and `_resolve_path`, then wrapped into `DocumentLoadError`. This preserves exception hierarchy contracts and attaches contextual details (file path, raw error string) for audit logging.
+

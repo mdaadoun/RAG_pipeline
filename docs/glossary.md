@@ -87,3 +87,16 @@ Regex-based masking of Markdown tables and code blocks during text cleaning to p
 
 ### Information Loss Audit
 Systematic measurement of document retention, character coverage ratios, duplicate overlaps, and orphan split blocks post-chunking.
+
+### DocumentLoader
+Abstract base class defining contract interface for file ingestion loaders returning typed domain model `LoadedDocument`.
+
+### TextMarkdownLoader
+Unified document loader supporting auto-detection and parsing of plain text and markdown format files.
+
+### Deterministic SHA-256 Document Identifier
+Unique 16-char identifier generated from a SHA-256 digest of file name and content string to ensure idempotent indexing across pipeline executions.
+
+### DocumentLoadError Shielding
+Encapsulation pattern translating low-level OS and decoding errors into domain-specific exception models carrying structured metadata payloads.
+

@@ -7,6 +7,14 @@ from ingestion.exceptions import (
     DocumentLoadError,
     IngestionError,
 )
+from ingestion.loaders import (
+    DocumentLoader,
+    MarkdownLoader,
+    TextLoader,
+    TextMarkdownLoader,
+    compute_document_id,
+    get_loader,
+)
 from ingestion.models import (
     AuditReport,
     BaseDomainModel,
@@ -36,4 +44,11 @@ __all__ = [
     "CleanError",
     "ChunkError",
     "AuditError",
+    "DocumentLoader",
+    "TextLoader",
+    "MarkdownLoader",
+    "TextMarkdownLoader",
+    "get_loader",
+    "compute_document_id",
 ]
+
