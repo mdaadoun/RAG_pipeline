@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+.mypy_cache/
+.ruff_cache/
+data/output/*
+!data/output/.gitkeep
+data/input/*
+!data/input/.gitkeep
+rapport_ingestion.json
+.env

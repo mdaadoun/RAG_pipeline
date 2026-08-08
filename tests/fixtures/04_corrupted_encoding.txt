@@ -1,0 +1,1 @@
+Corrupted document test file with non-standard Unicode: CafÃ© & NaÃ¯ve testing NFKC.

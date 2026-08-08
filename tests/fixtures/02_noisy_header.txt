@@ -1,0 +1,6 @@
+=== SYSTEM HEADER NOISE ===
+Date: 2026-08-08
+Author: Automated System
+
+This is raw text with control characters\x00 and trailing space noise.
+It tests the cleaning layer normalization capabilities.
