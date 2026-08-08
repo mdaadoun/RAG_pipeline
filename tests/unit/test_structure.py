@@ -90,6 +90,10 @@ def test_package_exports() -> None:
         "GeminiEncoder",
         "HeuristicTokenizer",
         "get_tokenizer",
+        "ChunkingStrategy",
+        "BaseChunker",
+        "FixedSizeChunker",
+        "RecursiveStructuralChunker",
     ]
     for symbol in expected_exports:
         assert hasattr(ingestion, symbol), f"Package missing export: {symbol}"

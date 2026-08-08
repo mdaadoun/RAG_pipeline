@@ -157,4 +157,20 @@
 ### Q31: What is the impact of fixed-size token chunking on Markdown tables?
 **Answer:** Fixed-size token chunking ignores semantic Markdown boundaries, frequently splitting table rows across chunks. This results in orphan table chunks where column headers are disconnected from data cells, reducing retrieval precision during vector search.
 
+---
+
+### Q32: Why use recursive structural chunking instead of fixed-size token sliding windows in RAG pipelines?
+**Answer:** Fixed-size chunking splits text rigidly at token boundaries, often breaking sentences, paragraphs, or Markdown headers mid-concept, which creates fragmented semantic embeddings and split table structures. Recursive structural chunking prioritizes natural document structure by splitting at structural delimiters first, preserving semantic coherence and minimizing orphan blocks while respecting model context windows.
+
+---
+
+### Q33: How does `RecursiveStructuralChunker` guarantee exact character alignment without introducing string allocation discrepancies?
+**Answer:** The chunker computes leaf character spans `[start_char, end_char]` over the original document string during the recursive delimiter partitioning step. Candidate merging operates directly on these integer character boundaries, ensuring chunk content is derived via exact slice indexing `text[start:end]` without character gaps or string duplication.
+
+---
+
+### Q34: How are protected blocks like Markdown tables and code blocks safeguarded against boundary splitting?
+**Answer:** Protected blocks are extracted via regular expressions prior to chunking. During chunk creation, the chunker evaluates whether a chunk's character range overlaps partially with any protected block range without fully encompassing it. If so, it flags `is_orphan_block = True` so downstream quality auditors (`IngestionMonitor`) can alert or route the document accordingly.
+
+
 

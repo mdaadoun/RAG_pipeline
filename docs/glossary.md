@@ -142,4 +142,17 @@ An iterative algorithm that advances a window frame over a sequence of tokens by
 ### Orphan Block
 A structural Markdown element (such as a table or code block) whose contents are partially severed across chunk boundaries, causing semantic context loss.
 
+### RecursiveStructuralChunker
+A context-aware document segmentation strategy that recursively splits text across structural delimiters (headers, paragraphs, lines, sentences) while respecting model token bounds.
+
+### Hierarchical Separator Fallback
+An ordered sequence of structural delimiters evaluated sequentially to partition text into the largest valid sub-blocks fitting within max token constraints.
+
+### Leaf Span Partitioning
+The process of recursively breaking text down into contiguous atomic character ranges `[start_char, end_char]` prior to token-bounded candidate chunk merging.
+
+### Orphan Block Flag
+A boolean property (`is_orphan_block`) indicating whether a chunk boundary cuts through a protected structural element like a Markdown table or code block.
+
+
 

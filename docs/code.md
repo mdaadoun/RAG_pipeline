@@ -117,7 +117,9 @@
 - **`ChunkingStrategy.chunk(doc_or_text, doc_id) -> list[Chunk]`:** Abstract method defining text slicing contract returning list of typed `Chunk` domain objects.
 - **`BaseChunker = ChunkingStrategy`:** Backward-compatible alias mapping.
 - **`FixedSizeChunker(ChunkingStrategy)`:** Concrete strategy splitting document text using exact token count sliding windows (`chunk_size` and `overlap`) from the injected tokenizer with dual-mode token ID / binary-search execution and orphan block detection.
-- **`RecursiveStructuralChunker(ChunkingStrategy)`:** Concrete strategy recursively splitting text along hierarchical structural boundaries (`\n# `, `\n## `, `\n### `, `\n\n`, `\n`, ` `) with exact token counting from the injected tokenizer.
+- **`RecursiveStructuralChunker(ChunkingStrategy)`:** Concrete strategy recursively splitting text along hierarchical structural boundaries (`\n# `, `\n## `, `\n### `, `\n\n`, `\n`, `. `, ` `) with exact token counting from the injected tokenizer.
+- **`RecursiveStructuralChunker._partition_text(text, start, end, separators)`:** Recursively partitions a text range `[start:end]` into spans fitting within `chunk_size` tokens based on delimiter hierarchy.
+- **`RecursiveStructuralChunker._fallback_spans(text, start, end)`:** Character binary search fallback for text spans exceeding `chunk_size` when no structural delimiters fit.
 
 ### Tokenizer & Chunking Engine Unit Tests
 
@@ -138,6 +140,9 @@
 - **`test_fixed_size_token_chunker_exact_counts()`:** Validates exact token limits and sliding window overlap offsets using `TiktokenEncoder`.
 - **`test_fixed_size_token_chunker_empty_input()`:** Verifies `FixedSizeChunker` handles empty strings cleanly returning empty chunk list.
 - **`test_fixed_size_token_chunker_orphan_detection()`:** Verifies orphan block detection flags chunks that split Markdown tables.
+- **`test_recursive_structural_chunker_custom_separators()`:** Verifies `RecursiveStructuralChunker` respects custom separator lists.
+- **`test_recursive_structural_chunker_empty_input()`:** Verifies `RecursiveStructuralChunker` returns an empty list for empty strings.
+- **`test_recursive_structural_chunker_markdown_hierarchy()`:** Validates `RecursiveStructuralChunker` preserves Markdown title, section, and subsection structural boundaries.
 
 
 ### Document Loader Unit Tests

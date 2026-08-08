@@ -110,6 +110,45 @@ def test_fixed_size_token_chunker_orphan_detection() -> None:
     assert any(c.is_orphan_block for c in chunks)
 
 
+def test_recursive_structural_chunker_custom_separators() -> None:
+    """Verify RecursiveStructuralChunker respects custom separator hierarchy."""
+    custom_seps = ["\n\n", "\n", " "]
+    chunker = RecursiveStructuralChunker(
+        chunk_size=15, min_chunk_size=5, separators=custom_seps
+    )
+    assert chunker.separators == custom_seps
+
+    text = "Paragraph 1 line text.\n\nParagraph 2 line text."
+    chunks = chunker.chunk(text, doc_id="custom_sep_doc")
+    assert len(chunks) > 0
+    assert all(c.token_count <= 15 for c in chunks)
+
+
+def test_recursive_structural_chunker_empty_input() -> None:
+    """Verify RecursiveStructuralChunker returns empty list for empty string."""
+    chunker = RecursiveStructuralChunker(chunk_size=50)
+    assert chunker.chunk("") == []
+
+
+def test_recursive_structural_chunker_markdown_hierarchy() -> None:
+    """Verify RecursiveStructuralChunker preserves markdown section boundaries."""
+    doc_content = (
+        "# Title Section\n\n"
+        "This is the introduction paragraph under the title section.\n\n"
+        "## SubSection A\n\n"
+        "Content inside subsection A detailing structural splitting rules.\n\n"
+        "### Deep Section B\n\n"
+        "Deep section content testing sentence and word level fallback."
+    )
+    chunker = RecursiveStructuralChunker(chunk_size=20, min_chunk_size=5)
+    chunks = chunker.chunk(doc_content, doc_id="struct_doc")
+
+    assert len(chunks) > 1
+    assert all(c.token_count <= 20 for c in chunks)
+    assert all(doc_content[c.start_char:c.end_char] == c.content for c in chunks)
+
+
+
 
 
 
