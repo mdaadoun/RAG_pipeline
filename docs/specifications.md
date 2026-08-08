@@ -233,29 +233,50 @@ class TextMarkdownLoader(DocumentLoader):
 
 ---
 
-### 3.4 Strategy Pattern Interface (`src/ingestion/chunkers.py`)
+### 3.4 Model-Agnostic Tokenizer & Strategy Pattern Interface (`src/ingestion/tokenizers.py` & `src/ingestion/chunkers.py`)
 
 ```python
 from abc import ABC, abstractmethod
-import tiktoken
 from src.ingestion.models import Chunk
 
+class BaseTokenizer(ABC):
+    @abstractmethod
+    def encode(self, text: str) -> list[int]:
+        """Encodes text to token IDs."""
+        pass
+
+    @abstractmethod
+    def decode(self, tokens: list[int]) -> str:
+        """Decodes token IDs to string."""
+        pass
+
+    @abstractmethod
+    def count_tokens(self, text: str) -> int:
+        """Returns total token count for text."""
+        pass
+
 class ChunkingStrategy(ABC):
-    def __init__(self, chunk_size: int = 512, overlap: int = 0, min_chunk_size: int = 20, model_name: str = "gpt-4o"):
+    def __init__(
+        self,
+        chunk_size: int = 512,
+        overlap: int = 0,
+        min_chunk_size: int = 20,
+        tokenizer: BaseTokenizer | str | None = None
+    ):
         self.chunk_size = chunk_size
         self.overlap = overlap
         self.min_chunk_size = min_chunk_size
-        self.tokenizer = tiktoken.encoding_for_model(model_name)
+        self.tokenizer = get_tokenizer(tokenizer) if isinstance(tokenizer, str) else (tokenizer or GeminiEncoder())
 
     def count_tokens(self, text: str) -> int:
-        return len(self.tokenizer.encode(text))
+        return self.tokenizer.count_tokens(text)
 
     @abstractmethod
     def chunk(self, text: str, document_id: str) -> list[Chunk]:
         """Splits text into chunks in a pure, deterministic manner."""
         pass
-
 ```
+
 
 ---
 

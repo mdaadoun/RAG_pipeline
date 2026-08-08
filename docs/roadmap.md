@@ -66,13 +66,14 @@ Phase 5: Loss Audit    ──► Phase 6: Orchestration   ──► Phase 7: CLI
 - Phase 3 completed.
 
 ### Tasks
-- [ ] **Step 4.1: Strategy Interface & Tiktoken Encoder:** Implement `src/ingestion/chunkers.py` with `ChunkingStrategy(ABC)` interface and Tiktoken `cl100k_base` wrapper.
-- [ ] **Step 4.2: Fixed-Size Token Chunker:** Implement `FixedSizeChunker` utilizing a sliding window algorithm based on exact token counts (`chunk_size`) and token overlap (`overlap`).
+- [ ] **Step 4.1: Tokenizer & Strategy Interfaces:** Implement `src/ingestion/tokenizers.py` (`BaseTokenizer(ABC)` interface + `GeminiEncoder`, `TiktokenEncoder`, `HeuristicTokenizer`) and `src/ingestion/chunkers.py` (`ChunkingStrategy` ABC with dependency injection).
+- [ ] **Step 4.2: Fixed-Size Token Chunker:** Implement `FixedSizeChunker` utilizing a sliding window algorithm based on exact token counts from the injected `BaseTokenizer` instance.
 - [ ] **Step 4.3: Recursive Structural Chunker:** Implement `RecursiveStructuralChunker` with hierarchical delimiter splitting (`["\n# ", "\n## ", "\n### ", "\n\n", "\n", ". ", " "]`).
 
 ### Verification Checkpoints
-- Unit tests in `tests/unit/test_chunkers.py` verify exact token counts per chunk via `tiktoken`.
+- Unit tests in `tests/unit/test_tokenizers.py` and `tests/unit/test_chunkers.py` verify exact token limits per chunk across Gemini and OpenAI tokenizers.
 - Recursive chunker preserves heading structures without exceeding max token bounds.
+
 
 ---
 

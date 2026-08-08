@@ -20,10 +20,19 @@ class StrategyType(str, Enum):
     RECURSIVE = "recursive"
 
 
+class TokenizerType(str, Enum):
+    """Supported model-agnostic tokenizer providers."""
+
+    GEMINI = "gemini"
+    TIKTOKEN = "tiktoken"
+    HEURISTIC = "heuristic"
+
+
 class IngestionConfig(BaseDomainModel):
     """Configuration model for document ingestion & chunking parameters."""
 
     strategy: StrategyType = Field(default=StrategyType.RECURSIVE, description="Chunking strategy type")
+    tokenizer: TokenizerType = Field(default=TokenizerType.GEMINI, description="Tokenizer provider type")
     chunk_size: int = Field(default=512, gt=0, description="Target character size per chunk")
     overlap: int = Field(default=64, ge=0, description="Character overlap between consecutive chunks")
     min_chunk_size: int = Field(default=50, ge=0, description="Minimum acceptable chunk character size")
@@ -33,6 +42,7 @@ class IngestionConfig(BaseDomainModel):
     input_dir: str = Field(default="data/input", description="Input directory path for source documents")
     output_dir: str = Field(default="data/output", description="Output directory path for chunk artifacts")
     report_path: str = Field(default="rapport_ingestion.json", description="Path for generating audit JSON report")
+
 
 
 class LoadedDocument(BaseDomainModel):

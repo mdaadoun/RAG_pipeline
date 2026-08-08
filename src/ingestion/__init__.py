@@ -1,5 +1,11 @@
 """Ingestion pipeline package."""
 
+from ingestion.chunkers import (
+    BaseChunker,
+    ChunkingStrategy,
+    FixedSizeChunker,
+    RecursiveStructuralChunker,
+)
 from ingestion.cleaner import TextCleaner
 from ingestion.exceptions import (
     AuditError,
@@ -27,11 +33,20 @@ from ingestion.models import (
     IngestionReport,
     LoadedDocument,
     StrategyType,
+    TokenizerType,
+)
+from ingestion.tokenizers import (
+    BaseTokenizer,
+    GeminiEncoder,
+    HeuristicTokenizer,
+    TiktokenEncoder,
+    get_tokenizer,
 )
 
 __all__ = [
     "BaseDomainModel",
     "StrategyType",
+    "TokenizerType",
     "IngestionConfig",
     "LoadedDocument",
     "Document",
@@ -52,6 +67,16 @@ __all__ = [
     "get_loader",
     "compute_document_id",
     "TextCleaner",
+    "BaseTokenizer",
+    "TiktokenEncoder",
+    "GeminiEncoder",
+    "HeuristicTokenizer",
+    "get_tokenizer",
+    "ChunkingStrategy",
+    "BaseChunker",
+    "FixedSizeChunker",
+    "RecursiveStructuralChunker",
 ]
+
 
 

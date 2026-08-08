@@ -172,9 +172,10 @@ class IngestionReport(BaseDomainModel):
   3. Repetitive header/footer line removal if occurrence count $> N$ (`boilerplate_threshold`).
   4. Structural block protection: Lines matching `^\|.*\|$` (tables) and ``` block boundaries are bypassed during line stripping.
 
-### 4.3 Strategy Pattern Chunking Engine (`ChunkingStrategy`)
-- **Abstract Base:** `ChunkingStrategy(ABC)` with `@abstractmethod chunk(text: str, doc_id: str) -> List[Chunk]`.
-- **`FixedSizeChunker`:** Token sliding-window algorithm (`tiktoken` `cl100k_base` encoding) based on exact token `chunk_size` and `overlap`.
+### 4.3 Strategy Pattern Chunking Engine & Model-Agnostic Tokenization (`ChunkingStrategy` & `BaseTokenizer`)
+- **Tokenizer Abstraction:** `BaseTokenizer(ABC)` exposing `@abstractmethod encode`, `decode`, and `count_tokens`. Implementations include `GeminiEncoder` (Gemini model API / calibrated fallback), `TiktokenEncoder` (OpenAI BPE), and `HeuristicTokenizer`.
+- **Abstract Base Strategy:** `ChunkingStrategy(ABC)` with `@abstractmethod chunk(doc_or_text, doc_id) -> list[Chunk]`, injecting a `BaseTokenizer` instance.
+- **`FixedSizeChunker`:** Token sliding-window algorithm based on exact token `chunk_size` and `overlap` calculated by the injected `BaseTokenizer`.
 - **`RecursiveStructuralChunker`:** Hierarchical splitter evaluating split delimiters in order:
   `["\n# ", "\n## ", "\n### ", "\n\n", "\n", ". ", " "]`.
 
@@ -200,8 +201,9 @@ class IngestionReport(BaseDomainModel):
 | **Language** | Python `>= 3.11` | Strict typing enforced via `mypy --strict` |
 | **Data Contracts** | Pydantic V2 | Immutable models (`frozen=True`, `extra="forbid"`) |
 | **CLI & Formatting** | Typer & Rich | Terminal user interface & structured tables |
-| **Tokenization** | Tiktoken | Model `gpt-4o` (`cl100k_base` encoding) |
+| **Tokenization** | Model-Agnostic (`GeminiEncoder` / `TiktokenEncoder`) | Google Gemini (`gemini-1.5-flash`) & OpenAI (`cl100k_base`) |
 | **Linting & Code Style**| Ruff & Pytest | Quality verification and continuous integration |
+
 
 ---
 

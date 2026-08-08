@@ -21,6 +21,7 @@ def test_package_directory_structure_exists() -> None:
         "exceptions.py",
         "loaders.py",
         "cleaner.py",
+        "tokenizers.py",
         "chunkers.py",
         "monitor.py",
         "pipeline.py",
@@ -59,10 +60,11 @@ def test_custom_exception_hierarchy() -> None:
 
 
 def test_package_exports() -> None:
-    """Verify root ingestion package exports core domain models, exceptions, and loaders."""
+    """Verify root ingestion package exports core domain models, exceptions, loaders, and tokenizers."""
     expected_exports = [
         "BaseDomainModel",
         "StrategyType",
+        "TokenizerType",
         "IngestionConfig",
         "LoadedDocument",
         "Document",
@@ -83,8 +85,14 @@ def test_package_exports() -> None:
         "get_loader",
         "compute_document_id",
         "TextCleaner",
+        "BaseTokenizer",
+        "TiktokenEncoder",
+        "GeminiEncoder",
+        "HeuristicTokenizer",
+        "get_tokenizer",
     ]
     for symbol in expected_exports:
         assert hasattr(ingestion, symbol), f"Package missing export: {symbol}"
+
 
 

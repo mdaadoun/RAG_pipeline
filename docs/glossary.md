@@ -112,5 +112,24 @@ A unique token format (`___SHIELDED_<uuid>_<idx>___`) inserted in place of prote
 ### Table Pipe Regex Shielding
 Regular expression matching pattern (`^\|.*\|$) that detects contiguous rows of Markdown pipe-delimited tabular data.
 
+### BaseTokenizer
+Abstract base class contract defining model-agnostic token encoding, decoding, and counting signatures.
 
+### GeminiEncoder
+Tokenizer adapter encapsulating Google Gemini API tokenization with calibrated SentencePiece offline fallback.
+
+### TiktokenEncoder
+Domain adapter wrapper encapsulating OpenAI tiktoken library for encoding, decoding, and token counting.
+
+### ChunkingStrategy
+Abstract base class defining the standard interface and injected token encoder for document chunking algorithms.
+
+### Model-Agnostic Tokenization
+Architectural decoupling strategy separating document chunkers from specific LLM provider tokenizers, enabling dynamic swapping between OpenAI, Gemini, or custom encoders.
+
+### cl100k_base
+Byte-pair encoding (BPE) tokenization scheme used by OpenAI models (e.g. GPT-4, text-embedding-ada-002).
+
+### Token Windowing
+Document segmentation technique partitioning text according to exact BPE or SentencePiece token counts rather than raw character lengths.
 

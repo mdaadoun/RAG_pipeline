@@ -122,5 +122,23 @@
 ### Q24: What guarantees that placeholder tokens do not collide with actual user document text?
 **Answer:** Each cleaning invocation generates a fresh 8-character hex string from `uuid.uuid4()`. The placeholder string follows the template `___SHIELDED_<uuid>_<idx>___`, rendering accidental collisions with document content statistically impossible.
 
+---
 
+### Q25: Why encapsulate provider tokenizers into a model-agnostic `BaseTokenizer` abstraction layer?
+**Answer:** Decouples text chunking strategies from specific LLM vendors (e.g. OpenAI `tiktoken` vs Google Gemini `SentencePiece`). It enables dynamic injection of `GeminiEncoder`, `TiktokenEncoder`, or `HeuristicTokenizer`, preventing token estimation errors when deploying RAG systems across different LLM APIs.
+
+---
+
+### Q26: What parameter validation boundaries are enforced in `ChunkingStrategy.__init__` and why?
+**Answer:** Enforces `chunk_size > 0`, `overlap >= 0`, `overlap < chunk_size`, and `min_chunk_size >= 0`. Preventing `overlap >= chunk_size` avoids infinite sliding window loops, while non-negative checks eliminate invalid negative array indexing.
+
+---
+
+### Q27: How does `_normalize_doc_args` support dual input types in `ChunkingStrategy.chunk()`?
+**Answer:** Inspects the input payload: if a `LoadedDocument` instance is passed, it extracts `content` and `id`; if a raw string is passed, it uses `doc_id` or defaults to `"doc_0"`, ensuring polymorphic API flexibility across different callers.
+
+---
+
+### Q28: Why is using OpenAI's `tiktoken` as a universal tokenizer problematic when serving Google Gemini embeddings/LLMs?
+**Answer:** OpenAI (`cl100k_base` / `o200k_base`) and Google Gemini use fundamentally different BPE and SentencePiece vocabulary encodings. For non-English texts (e.g. French), token counts between OpenAI and Gemini tokenizers can diverge by 10–25%. Using `tiktoken` for Gemini inputs can lead to context window overflow or unexpected chunk truncation.
 

@@ -99,6 +99,44 @@
 - **`test_tilde_code_block_shielding()`:** Verifies `~~~` fenced code blocks are extracted and shielded correctly.
 
 
+### Model-Agnostic Tokenization Engine
+
+#### `src/ingestion/tokenizers.py`
+- **`BaseTokenizer(ABC)`:** Abstract base class defining model-agnostic token encoding contracts (`encode`, `decode`, `count_tokens`).
+- **`TiktokenEncoder(BaseTokenizer)`:** Wrapper around OpenAI `tiktoken` BPE encodings (`cl100k_base` default or model names).
+- **`GeminiEncoder(BaseTokenizer)`:** Tokenizer adapter for Google Gemini model API (`gemini-1.5-flash`) with calibrated SentencePiece offline fallback.
+- **`HeuristicTokenizer(BaseTokenizer)`:** Lightweight character/word ratio token estimator for fast local execution.
+- **`get_tokenizer(name_or_provider: str = "gemini") -> BaseTokenizer`:** Factory function routing to concrete tokenizer implementations by provider name.
+
+### Strategy Pattern Chunking Engine
+
+#### `src/ingestion/chunkers.py`
+- **`ChunkingStrategy(ABC)`:** Abstract Base Class defining chunking strategy interface with parameter validation checks (`chunk_size > 0`, `overlap >= 0`, `overlap < chunk_size`, `min_chunk_size >= 0`) and injected `BaseTokenizer` instance.
+- **`ChunkingStrategy.count_tokens / encode / decode`:** Delegation accessors forwarding token operations to the injected `BaseTokenizer`.
+- **`ChunkingStrategy._normalize_doc_args(doc_or_text, doc_id)`:** Polymorphic helper normalizing `LoadedDocument` objects or raw `str` text into `(text, doc_id)` tuples.
+- **`ChunkingStrategy.chunk(doc_or_text, doc_id) -> list[Chunk]`:** Abstract method defining text slicing contract returning list of typed `Chunk` domain objects.
+- **`BaseChunker = ChunkingStrategy`:** Backward-compatible alias mapping.
+- **`FixedSizeChunker(ChunkingStrategy)`:** Concrete strategy splitting document text using rigid character sliding windows and exact token counting from the injected tokenizer.
+- **`RecursiveStructuralChunker(ChunkingStrategy)`:** Concrete strategy recursively splitting text along hierarchical structural boundaries (`\n# `, `\n## `, `\n### `, `\n\n`, `\n`, ` `) with exact token counting from the injected tokenizer.
+
+### Tokenizer & Chunking Engine Unit Tests
+
+#### `tests/unit/test_tokenizers.py`
+- **`test_base_tokenizer_abc_instantiation()`:** Verifies `BaseTokenizer` ABC cannot be directly instantiated.
+- **`test_tiktoken_encoder()`:** Validates `TiktokenEncoder` encoding, decoding, and count calculation.
+- **`test_gemini_encoder()`:** Validates `GeminiEncoder` count calculations and SentencePiece fallback handling.
+- **`test_heuristic_tokenizer()`:** Validates `HeuristicTokenizer` token estimation and bounds validation.
+- **`test_get_tokenizer_factory()`:** Tests factory routing by provider name (`gemini`, `tiktoken`, `heuristic`).
+
+#### `tests/unit/test_chunkers.py`
+- **`test_chunker_with_injected_gemini_encoder()`:** Verifies `FixedSizeChunker` and `RecursiveStructuralChunker` operate seamlessly with injected `GeminiEncoder`.
+- **`test_chunking_strategy_parameter_validations()`:** Validates numeric parameter boundary checks for `chunk_size`, `overlap`, and `min_chunk_size`.
+- **`test_chunking_strategy_raw_string_input()`:** Verifies string inputs with custom `doc_id` chunk successfully without `LoadedDocument` wrappers.
+- **`test_chunking_strategy_inheritance()`:** Confirms `FixedSizeChunker` and `RecursiveStructuralChunker` inherit from `ChunkingStrategy`.
+- **`test_fixed_size_chunker()`:** Validates fixed chunking character window boundaries, overlap offsets, and token counting.
+- **`test_recursive_chunker()`:** Validates recursive chunking structural boundary preservation, orphan block avoidance, and token counting.
+
+
 ### Document Loader Unit Tests
 
 #### `tests/unit/test_loaders.py`
