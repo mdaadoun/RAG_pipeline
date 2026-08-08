@@ -142,3 +142,19 @@
 ### Q28: Why is using OpenAI's `tiktoken` as a universal tokenizer problematic when serving Google Gemini embeddings/LLMs?
 **Answer:** OpenAI (`cl100k_base` / `o200k_base`) and Google Gemini use fundamentally different BPE and SentencePiece vocabulary encodings. For non-English texts (e.g. French), token counts between OpenAI and Gemini tokenizers can diverge by 10–25%. Using `tiktoken` for Gemini inputs can lead to context window overflow or unexpected chunk truncation.
 
+---
+
+### Q29: Why does `FixedSizeChunker` operate on token counts rather than character counts?
+**Answer:** LLM context windows and embedding model input limits are strictly measured in tokens. Operating on token counts prevents context limit overflow and guarantees consistent input token density across chunks, whereas character length varies widely based on word length, formatting, and language.
+
+---
+
+### Q30: How does `FixedSizeChunker` handle tokenizers that do not support loss-less token-to-text decoding?
+**Answer:** When the injected tokenizer lacks loss-less decode (e.g. `HeuristicTokenizer` or `GeminiEncoder` offline fallback), `FixedSizeChunker` employs a binary-search token windowing algorithm over character slices using `count_tokens()`, ensuring chunks strictly respect max token bounds without content corruption.
+
+---
+
+### Q31: What is the impact of fixed-size token chunking on Markdown tables?
+**Answer:** Fixed-size token chunking ignores semantic Markdown boundaries, frequently splitting table rows across chunks. This results in orphan table chunks where column headers are disconnected from data cells, reducing retrieval precision during vector search.
+
+

@@ -79,5 +79,37 @@ def test_recursive_chunker(sample_document: Document) -> None:
     assert all(c.token_count == chunker.count_tokens(c.content) for c in chunks)
 
 
+def test_fixed_size_token_chunker_exact_counts() -> None:
+    """Verify FixedSizeChunker enforces exact token limits and token overlaps."""
+    encoder = TiktokenEncoder("cl100k_base")
+    chunker = FixedSizeChunker(chunk_size=20, overlap=5, min_chunk_size=5, tokenizer=encoder)
+    text = "This is a detailed synthetic text document designed to test exact token counts. " * 4
+    chunks = chunker.chunk(text, doc_id="exact_doc")
+
+    assert len(chunks) > 1
+    assert all(c.token_count <= 20 for c in chunks)
+    for c in chunks[:-1]:
+        assert c.token_count == 20
+    assert all(text[c.start_char:c.end_char] == c.content for c in chunks)
+
+
+def test_fixed_size_token_chunker_empty_input() -> None:
+    """Verify FixedSizeChunker returns an empty list for empty input text."""
+    chunker = FixedSizeChunker(chunk_size=50, overlap=10)
+    assert chunker.chunk("") == []
+
+
+def test_fixed_size_token_chunker_orphan_detection() -> None:
+    """Verify FixedSizeChunker flags orphan blocks when Markdown tables are split."""
+    encoder = TiktokenEncoder("cl100k_base")
+    chunker = FixedSizeChunker(chunk_size=15, overlap=3, min_chunk_size=5, tokenizer=encoder)
+    table_text = "Header\n\n| Col A | Col B |\n| --- | --- |\n| Val A1 | Val B1 |\n| Val A2 | Val B2 |\n\nFooter"
+    chunks = chunker.chunk(table_text, doc_id="table_doc")
+
+    assert len(chunks) > 1
+    assert any(c.is_orphan_block for c in chunks)
+
+
+
 
 

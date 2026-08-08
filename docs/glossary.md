@@ -133,3 +133,13 @@ Byte-pair encoding (BPE) tokenization scheme used by OpenAI models (e.g. GPT-4, 
 ### Token Windowing
 Document segmentation technique partitioning text according to exact BPE or SentencePiece token counts rather than raw character lengths.
 
+### Fixed-Size Token Chunker
+A document chunking strategy that partitions text into windows of fixed token length (`chunk_size`) with fixed token overlap (`overlap`) using an injected tokenizer.
+
+### Token Sliding Window
+An iterative algorithm that advances a window frame over a sequence of tokens by `step_tokens = chunk_size - overlap` to produce overlapping document segments.
+
+### Orphan Block
+A structural Markdown element (such as a table or code block) whose contents are partially severed across chunk boundaries, causing semantic context loss.
+
+

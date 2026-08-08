@@ -116,7 +116,7 @@
 - **`ChunkingStrategy._normalize_doc_args(doc_or_text, doc_id)`:** Polymorphic helper normalizing `LoadedDocument` objects or raw `str` text into `(text, doc_id)` tuples.
 - **`ChunkingStrategy.chunk(doc_or_text, doc_id) -> list[Chunk]`:** Abstract method defining text slicing contract returning list of typed `Chunk` domain objects.
 - **`BaseChunker = ChunkingStrategy`:** Backward-compatible alias mapping.
-- **`FixedSizeChunker(ChunkingStrategy)`:** Concrete strategy splitting document text using rigid character sliding windows and exact token counting from the injected tokenizer.
+- **`FixedSizeChunker(ChunkingStrategy)`:** Concrete strategy splitting document text using exact token count sliding windows (`chunk_size` and `overlap`) from the injected tokenizer with dual-mode token ID / binary-search execution and orphan block detection.
 - **`RecursiveStructuralChunker(ChunkingStrategy)`:** Concrete strategy recursively splitting text along hierarchical structural boundaries (`\n# `, `\n## `, `\n### `, `\n\n`, `\n`, ` `) with exact token counting from the injected tokenizer.
 
 ### Tokenizer & Chunking Engine Unit Tests
@@ -133,8 +133,11 @@
 - **`test_chunking_strategy_parameter_validations()`:** Validates numeric parameter boundary checks for `chunk_size`, `overlap`, and `min_chunk_size`.
 - **`test_chunking_strategy_raw_string_input()`:** Verifies string inputs with custom `doc_id` chunk successfully without `LoadedDocument` wrappers.
 - **`test_chunking_strategy_inheritance()`:** Confirms `FixedSizeChunker` and `RecursiveStructuralChunker` inherit from `ChunkingStrategy`.
-- **`test_fixed_size_chunker()`:** Validates fixed chunking character window boundaries, overlap offsets, and token counting.
+- **`test_fixed_size_chunker()`:** Validates fixed chunking window boundaries, overlap offsets, and token counting.
 - **`test_recursive_chunker()`:** Validates recursive chunking structural boundary preservation, orphan block avoidance, and token counting.
+- **`test_fixed_size_token_chunker_exact_counts()`:** Validates exact token limits and sliding window overlap offsets using `TiktokenEncoder`.
+- **`test_fixed_size_token_chunker_empty_input()`:** Verifies `FixedSizeChunker` handles empty strings cleanly returning empty chunk list.
+- **`test_fixed_size_token_chunker_orphan_detection()`:** Verifies orphan block detection flags chunks that split Markdown tables.
 
 
 ### Document Loader Unit Tests
