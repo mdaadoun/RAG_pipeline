@@ -20,6 +20,7 @@
   - **`monitor.py`:** Quality assurance and information loss audit engine computing coverage & orphan block metrics.
 - **`tests/`:** Unit and integration test suite.
   - **`tests/unit/test_env.py`:** Unit tests verifying environment settings, logging, and core package imports.
+  - **`tests/unit/test_tooling.py`:** Unit tests validating ruff.toml, pyproject.toml MyPy strict configuration, and Makefile shortcuts.
 
 ---
 
@@ -35,7 +36,12 @@
 - **`setup_logging(log_level: str = "INFO") -> None`:** Initializes `structlog` processors for ISO-8601 timestamps, log level tagging, context variable merging, and JSON rendering.
 - **`get_logger(name: str = "ingestion") -> Any`:** Factory function returning a bound structured logger instance.
 
-### System Verification & Tests
+### Quality Assurance & Tooling Tests
+
+#### `tests/unit/test_tooling.py`
+- **`test_ruff_config_exists_and_valid()`:** Validates existence and parsing of standalone `ruff.toml` linting rules.
+- **`test_pyproject_mypy_strict_mode()`:** Confirms `pyproject.toml` enables MyPy strict mode and typed def enforcement.
+- **`test_makefile_targets_defined()`:** Verifies `Makefile` contains standard target shortcuts (`install`, `lint`, `test`, `dev`, `clean`).
 
 #### `tests/unit/test_env.py`
 - **`test_environment_settings_defaults()`:** Validates default environment properties and threshold bounds.
@@ -47,6 +53,8 @@
 
 ## 📦 3. Manifest & Automation
 
-- **`pyproject.toml`:** Dependency declarations (Poetry), CLI scripts, tool rules (`ruff`, `mypy`, `pytest`).
-- **`Makefile`:** Shortcuts (`make install`, `make lint`, `make test`, `make dev`, `make clean`).
-- **`Dockerfile`:** Container image specification.
+- **`ruff.toml`:** Dedicated Ruff static linter and formatter configuration (rules E, W, F, I, B, UP, SIM, RUF).
+- **`pyproject.toml`:** Dependency declarations (Poetry), CLI scripts, MyPy strict options, Pytest coverage rules.
+- **`Makefile`:** Shortcuts (`make install`, `make lint`, `make test`, `make dev`, `make clean`, `make docker-build`).
+- **`Dockerfile`:** Multi-stage production container image specification.
+

@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from ingestion.pipeline import IngestionPipeline
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from config.logging import setup_logging
 from config.settings import get_settings
+from ingestion.pipeline import IngestionPipeline
 
 app = typer.Typer(
     name="ingest",

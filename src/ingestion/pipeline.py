@@ -2,14 +2,13 @@
 
 from pathlib import Path
 
+from config.logging import get_logger
 from ingestion.chunkers import BaseChunker, FixedSizeChunker, RecursiveStructuralChunker
 from ingestion.cleaner import TextCleaner
 from ingestion.loaders import MarkdownLoader, TextLoader
 from ingestion.models import AuditReport, Chunk, Document
 from ingestion.monitor import IngestionMonitor
 from ingestion.utils.json_utils import save_audit_report, save_chunks_jsonl
-
-from config.logging import get_logger
 
 logger = get_logger("pipeline")
 

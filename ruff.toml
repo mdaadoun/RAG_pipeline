@@ -1,0 +1,26 @@
+# Ruff static code analysis & formatting configuration
+line-length = 88
+target-version = "py311"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "E501", # Line length handled by formatter
+    "UP017", # Allow timezone.utc for Python < 3.11 compatibility
+]
+
+[lint.isort]
+known-first-party = ["ingestion", "config"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

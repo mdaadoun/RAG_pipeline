@@ -8,7 +8,7 @@ install:
 
 lint:
 	$(POETRY) run ruff check src tests config
-	$(POETRY) run mypy src config
+	$(POETRY) run mypy src config tests
 
 test:
 	$(POETRY) run pytest

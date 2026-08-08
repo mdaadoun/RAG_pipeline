@@ -16,3 +16,19 @@
 
 ### Q3: Why enforce `mypy --strict` during initial environment setup rather than post-development?
 **Answer:** Enforcing `mypy --strict` from Step 1 prevents architectural debt, ensures explicit domain data signatures, and guarantees zero untyped boundaries across loaders, cleaner, chunkers, and audit monitor components.
+
+---
+
+### Q4: Why enforce MyPy strict mode in a Python RAG pipeline instead of relying on standard dynamic typing?
+**Answer:** RAG pipelines process unstructured text data and pass complex data objects (Documents, Chunks, AuditReports) between loaders, cleaners, chunkers, and monitors. Enforcing MyPy strict mode guarantees interface contracts, prevents NullPointer/AttributeError crashes during batch runs, and documents function signatures explicitly.
+
+---
+
+### Q5: What is the advantage of using Ruff over traditional Python linters like Flake8, Black, and Isort?
+**Answer:** Ruff is written in Rust and executes 10-100x faster than traditional Python tools. It unifies linting, import sorting, and code formatting into a single tool with zero-dependency execution, significantly reducing CI run times.
+
+---
+
+### Q6: How does Makefile standardization improve code quality across team environments?
+**Answer:** Makefile provides standardized command shortcuts (`make lint`, `make test`) that abstract underlying tooling details. This ensures developer environments match CI/CD runner environments exactly, preventing 'works on my machine' issues.
+
