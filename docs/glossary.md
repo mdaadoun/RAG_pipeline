@@ -100,3 +100,10 @@ Unique 16-char identifier generated from a SHA-256 digest of file name and conte
 ### DocumentLoadError Shielding
 Encapsulation pattern translating low-level OS and decoding errors into domain-specific exception models carrying structured metadata payloads.
 
+### NFKC Normalization
+Normalization Form KC (Compatibility Decomposition followed by Canonical Composition) standardizing unicode compatibility characters and ligatures into canonical equivalents.
+
+### Boilerplate Line Deduplication
+Filtering algorithm removing identical non-empty lines that repeat more than N times across document content to reduce token noise.
+
+

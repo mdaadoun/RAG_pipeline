@@ -92,3 +92,19 @@
 ### Q18: How are file system reading failures and encoding errors handled across the loader boundary?
 **Answer:** Low-level file system exceptions like `FileNotFoundError`, `UnicodeDecodeError`, or `OSError` are trapped inside `DocumentLoader._read_content` and `_resolve_path`, then wrapped into `DocumentLoadError`. This preserves exception hierarchy contracts and attaches contextual details (file path, raw error string) for audit logging.
 
+---
+
+### Q19: Why is structural shielding necessary before applying whitespace capping and line deduplication in RAG pipelines?
+**Answer:** Without shielding, whitespace normalization and newline capping would destroy code block indentation and break Markdown table row alignment, causing downstream chunkers to split tables mid-row and generate orphan blocks that fail vector retrieval.
+
+---
+
+### Q20: What are the trade-offs of using NFKC normalization instead of standard string stripping alone?
+**Answer:** NFKC standardizes compatibility characters like non-breaking spaces (`\xa0`) and ligatures into uniform representations for consistent tokenization and vector embeddings across diverse sources. However, it can transform certain specialized Unicode glyphs if canonical equivalents exist.
+
+---
+
+### Q21: How does `TextCleaner` enforce domain exception shielding for pipeline resilience?
+**Answer:** `TextCleaner` validates input types, raises `CleanError` with structured details for invalid inputs, and catches any runtime unexpected failures to wrap them into `CleanError` instances.
+
+

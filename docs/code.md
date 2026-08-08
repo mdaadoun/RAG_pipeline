@@ -15,10 +15,11 @@
   - **`models.py`:** Immutable Pydantic domain models (`BaseDomainModel`, `StrategyType`, `IngestionConfig`, `LoadedDocument`, `Chunk`, `DocumentReport`, `IngestionReport`, `IngestionMetrics`, `AuditReport`).
   - **`exceptions.py`:** Hierarchy inheriting from base `IngestionError`.
   - **`loaders.py`:** Abstract loader interface and concrete text/markdown file loaders.
-  - **`cleaner.py`:** Text cleaner engine supporting NFKC normalization and protected Markdown shielding.
+  - **`cleaner.py`:** Text cleaner engine supporting NFKC normalization, whitespace capping, boilerplate deduplication, and protected Markdown shielding.
   - **`chunkers.py`:** Fixed-size token chunker and recursive structural heading chunker via `tiktoken`.
   - **`monitor.py`:** Quality assurance and information loss audit engine computing coverage & orphan block metrics.
 - **`tests/`:** Unit and integration test suite.
+  - **`tests/unit/test_cleaner.py`:** Unit tests verifying NFKC normalization, whitespace capping, line deduplication, structural shielding, and CleanError handling.
   - **`tests/unit/test_models.py`:** Unit tests verifying domain model immutability (`frozen=True`), extra field rejection (`extra="forbid"`), StrategyType enum, and aliases.
   - **`tests/unit/test_env.py`:** Unit tests verifying environment settings, logging, and core package imports.
   - **`tests/unit/test_exceptions.py`:** Unit tests verifying exception hierarchy inheritance, details payloads, to_dict serialization, and polymorphic error handling.
@@ -73,6 +74,28 @@
 - **`MarkdownLoader(DocumentLoader)`:** Concrete loader parsing `.md`/`.markdown` files into `LoadedDocument` domain objects.
 - **`TextMarkdownLoader(DocumentLoader)`:** Generic document loader supporting auto-detection of text vs markdown formats.
 - **`get_loader(file_path: str | Path) -> DocumentLoader`:** Factory function returning the concrete loader instance based on file extension, or raising `DocumentLoadError` for unsupported file extensions.
+
+### Text Cleaning & Structural Protection Shielding
+
+#### `src/ingestion/cleaner.py`
+- **`TextCleaner(__init__)`:** Configures options for Unicode normalization, control character removal, newline capping bounds (`max_newlines`), boilerplate line threshold, and structural protection shielding.
+- **`TextCleaner.clean(text: str, boilerplate_threshold: int | None = None) -> str`:** Coordinates the cleaning pipeline: shields protected blocks, normalizes Unicode (NFKC), strips control bytes, standardizes spaces, deduplicates boilerplate lines, caps newlines, and restores protected blocks wrapped in `CleanError`.
+- **`TextCleaner.extract_protected_blocks(text: str) -> list[tuple[int, int, str]]`:** Scans document text with regular expressions to locate span boundaries of fenced code blocks (``` / ~~~) and Markdown tables (|...|).
+- **`TextCleaner._shield_protected_blocks(text: str) -> tuple[str, dict[str, str]]`:** Replaces protected spans with unique UUID-tagged placeholder tokens (`___SHIELDED_<uuid>_<idx>___`) and returns text along with the placeholder lookup dict.
+- **`TextCleaner._unshield_protected_blocks(text: str, placeholders: dict[str, str]) -> str`:** Restores original shielded block strings into their respective placeholder locations.
+- **`TextCleaner._deduplicate_boilerplate(text: str, threshold: int) -> str`:** Computes line frequencies across unshielded text lines and removes non-empty lines exceeding the configured occurrence threshold.
+
+### Text Cleaner Unit Tests
+
+#### `tests/unit/test_cleaner.py`
+- **`test_cleaner_nfkc_normalization()`:** Verifies NFKC character normalization, non-breaking space replacement, and control character removal.
+- **`test_extract_protected_blocks()`:** Validates boundary extraction for fenced code blocks and Markdown tables.
+- **`test_whitespace_standardization_and_capping()`:** Confirms excess newlines ($\ge 3$) are capped to `max_newlines` (default 2) and line trailing whitespace is trimmed.
+- **`test_boilerplate_line_deduplication()`:** Tests frequency-based line pruning for lines repeating more than `boilerplate_threshold` times.
+- **`test_structural_protection_shielding()`:** Verifies code blocks and Markdown tables preserve exact formatting, indentation, and newlines during cleaning.
+- **`test_cleaner_error_handling()`:** Ensures `CleanError` is raised on invalid non-string input types.
+- **`test_cleaner_configurable_options()`:** Validates behavior when unicode normalization, newline capping, or boilerplate deduplication are disabled.
+
 
 ### Document Loader Unit Tests
 

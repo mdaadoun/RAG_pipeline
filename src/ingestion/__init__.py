@@ -1,5 +1,6 @@
 """Ingestion pipeline package."""
 
+from ingestion.cleaner import TextCleaner
 from ingestion.exceptions import (
     AuditError,
     ChunkError,
@@ -50,5 +51,7 @@ __all__ = [
     "TextMarkdownLoader",
     "get_loader",
     "compute_document_id",
+    "TextCleaner",
 ]
+
 

@@ -82,7 +82,9 @@ def test_package_exports() -> None:
         "TextMarkdownLoader",
         "get_loader",
         "compute_document_id",
+        "TextCleaner",
     ]
     for symbol in expected_exports:
         assert hasattr(ingestion, symbol), f"Package missing export: {symbol}"
+
 
