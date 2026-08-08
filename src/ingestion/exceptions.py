@@ -1,31 +1,45 @@
 """Custom exception hierarchy for RAG document ingestion pipeline."""
 
+from typing import Any
+
 
 class IngestionError(Exception):
-    """Base exception for all ingestion pipeline errors."""
+    """Base exception for all document ingestion pipeline errors."""
 
-    pass
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.details = details or {}
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize exception context to dictionary representation."""
+        return {
+            "error_type": self.__class__.__name__,
+            "message": self.message,
+            "details": self.details,
+        }
 
 
 class DocumentLoadError(IngestionError):
-    """Exception raised when loading or parsing a source document fails."""
+    """Raised when loading or parsing a source document fails."""
 
     pass
 
 
 class CleanError(IngestionError):
-    """Exception raised when text cleaning or normalization encounters an error."""
+    """Raised when text cleaning or normalization encounters an error."""
 
     pass
 
 
 class ChunkError(IngestionError):
-    """Exception raised during document text chunking operations."""
+    """Raised during document text chunking operations."""
 
     pass
 
 
 class AuditError(IngestionError):
-    """Exception raised when quality audit checks or thresholds fail."""
+    """Raised when quality audit checks or thresholds fail."""
 
     pass
+

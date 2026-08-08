@@ -36,6 +36,24 @@ Structured python package layout separating data contracts, loaders, transformat
 ### Custom Exception Hierarchy
 Object-oriented error classification allowing granular error catching (e.g. `DocumentLoadError`, `ChunkError`) while maintaining a single root exception (`IngestionError`).
 
+### IngestionError
+Base exception class for all document ingestion pipeline errors equipped with message strings, structured details dictionary payloads, and JSON serialization (`to_dict()`).
+
+### DocumentLoadError
+Subclass of `IngestionError` raised when loading, reading, or parsing a source document fails.
+
+### CleanError
+Subclass of `IngestionError` raised when text cleaning, normalization, or header/footer stripping encounters an error.
+
+### ChunkError
+Subclass of `IngestionError` raised during document text chunking or token boundary splitting operations.
+
+### AuditError
+Subclass of `IngestionError` raised when quality audit checks or safety thresholds (such as character coverage ratio) fail.
+
+### Polymorphic Error Handling
+Software design pattern where callers catch multiple stage-specific exceptions using their common base class (`IngestionError`).
+
 ### Test Runner Registration
 Structuring tests into standard Pytest module hierarchies (`tests/unit/`, `tests/integration/`) for automated discovery and execution in test runners.
 

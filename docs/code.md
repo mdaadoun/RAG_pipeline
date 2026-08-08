@@ -20,6 +20,7 @@
   - **`monitor.py`:** Quality assurance and information loss audit engine computing coverage & orphan block metrics.
 - **`tests/`:** Unit and integration test suite.
   - **`tests/unit/test_env.py`:** Unit tests verifying environment settings, logging, and core package imports.
+  - **`tests/unit/test_exceptions.py`:** Unit tests verifying exception hierarchy inheritance, details payloads, to_dict serialization, and polymorphic error handling.
   - **`tests/unit/test_tooling.py`:** Unit tests validating ruff.toml, pyproject.toml MyPy strict configuration, and Makefile shortcuts.
   - **`tests/unit/test_structure.py`:** Unit tests validating package directory structure, test subdirectories, custom exception hierarchy, and exports.
 
@@ -40,7 +41,8 @@
 ### Custom Exception Hierarchy & Structure
 
 #### `src/ingestion/exceptions.py`
-- **`IngestionError(Exception)`:** Base exception for all ingestion pipeline errors.
+- **`IngestionError(message: str, details: dict[str, Any] | None = None)`:** Base domain exception for all ingestion pipeline errors equipped with structured `details` metadata and `to_dict()` serialization.
+- **`IngestionError.to_dict() -> dict[str, Any]`:** Serializes exception class name, message string, and contextual details payload into a JSON-compatible dictionary.
 - **`DocumentLoadError(IngestionError)`:** Exception raised when loading or parsing a source document fails.
 - **`CleanError(IngestionError)`:** Exception raised when text cleaning or normalization encounters an error.
 - **`ChunkError(IngestionError)`:** Exception raised during document text chunking operations.
@@ -48,6 +50,16 @@
 
 #### `src/ingestion/__init__.py`
 - **Package Root:** Re-exports core domain models (`Document`, `Chunk`, `IngestionMetrics`, `AuditReport`) and custom exception classes (`IngestionError`, `DocumentLoadError`, `CleanError`, `ChunkError`, `AuditError`) in `__all__`.
+
+### Custom Exception Unit Tests
+
+#### `tests/unit/test_exceptions.py`
+- **`test_ingestion_error_base_properties()`:** Verifies `IngestionError` string representation, message attribute, and default empty `details` payload.
+- **`test_ingestion_error_with_details()`:** Validates custom dictionary context passing to exception instances.
+- **`test_ingestion_error_to_dict()`:** Verifies JSON dictionary format emitted by `to_dict()`.
+- **`test_derived_exceptions_inheritance()`:** Confirms inheritance from both `IngestionError` and standard `Exception`.
+- **`test_derived_exceptions_polymorphic_catch()`:** Ensures derived exceptions are caught by `except IngestionError:` blocks while retaining specific details.
+- **`test_all_derived_exceptions_to_dict_type_names()`:** Validates that `to_dict()["error_type"]` dynamically emits exact child class names.
 
 ### Quality Assurance & Tooling Tests
 

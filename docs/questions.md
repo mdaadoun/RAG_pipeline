@@ -47,4 +47,20 @@
 ### Q9: Why export core exceptions and models directly from `ingestion.__init__`?
 **Answer:** It provides a clean public API contract for external consumers and CLI commands, avoiding deep internal module imports and reducing coupling to internal package layout.
 
+---
+
+### Q10: Why create a custom exception hierarchy rooted at `IngestionError` instead of using standard Python built-in exceptions?
+**Answer:** Custom exception hierarchies isolate domain-specific errors from standard runtime errors. It allows pipeline orchestrators to catch any ingestion failure via `except IngestionError:` without catching unrelated system bugs like `KeyError` or `AttributeError`, while enabling stage-specific audit tracking.
+
+---
+
+### Q11: What benefit does the `details` dictionary payload and `to_dict()` method provide to the ingestion pipeline?
+**Answer:** The `details` dictionary captures contextual metadata (such as document IDs, invalid characters, or file paths) at the error site. The `to_dict()` method provides a clean dictionary representation for JSON serialization into `DocumentReport` objects and external observability tools.
+
+---
+
+### Q12: How does the exception hierarchy support non-crashing directory batch ingestion?
+**Answer:** The batch pipeline orchestrator wraps per-file ingestion stages in `try...except IngestionError as exc:`. Caught exceptions are serialized using `exc.to_dict()` and attached to the file's `DocumentReport.errors` list, allowing batch execution to continue uninterrupted for remaining files.
+
+
 
