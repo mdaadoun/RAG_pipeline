@@ -1,6 +1,5 @@
 """Chunking strategies using the Strategy Pattern."""
 
-import uuid
 from abc import ABC, abstractmethod
 
 from ingestion.cleaner import TextCleaner
