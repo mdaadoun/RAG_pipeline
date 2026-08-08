@@ -1,15 +1,139 @@
 """Ingestion quality monitor and information loss auditor engine."""
 
 from datetime import datetime, timezone
+import re
 
-from ingestion.models import AuditReport, Chunk, Document, IngestionMetrics
+from ingestion.models import (
+    AuditReport,
+    Chunk,
+    Document,
+    DocumentReport,
+    IngestionMetrics,
+    IngestionReport,
+)
 
 
 class IngestionMonitor:
     """Quality assurance and information loss audit engine."""
 
-    def __init__(self, coverage_threshold: float = 0.98) -> None:
+    def __init__(
+        self,
+        min_chunk_size: int = 20,
+        max_overlap_tolerance: float = 0.05,
+        coverage_threshold: float = 0.98,
+    ) -> None:
+        """Initialize monitor audit thresholds."""
+        self.min_chunk_size = min_chunk_size
+        self.max_overlap_tolerance = max_overlap_tolerance
         self.coverage_threshold = coverage_threshold
+
+    def _detect_orphan_blocks(self, cleaned_text: str, chunks: list[Chunk]) -> int:
+        """Detect Markdown tables or code blocks split across chunk boundaries."""
+        if not cleaned_text or not chunks:
+            return 0
+
+        orphan_count = 0
+        patterns = [
+            re.compile(r"(?:^|\n)(\|[^\n]+\|\n?)+"),
+            re.compile(r"```[\s\S]*?```|~~~[\s\S]*?~~~"),
+        ]
+
+        for pattern in patterns:
+            for match in pattern.finditer(cleaned_text):
+                m_start, m_end = match.span()
+                intersecting = [
+                    c for c in chunks if c.start_char < m_end and c.end_char > m_start
+                ]
+                if len(intersecting) > 1:
+                    is_preserved = any(
+                        c.start_char <= m_start and c.end_char >= m_end for c in intersecting
+                    )
+                    if not is_preserved:
+                        orphan_count += 1
+
+        return orphan_count
+
+    def audit_document(
+        self,
+        document_id: str,
+        source_path: str,
+        cleaned_text: str,
+        chunks: list[Chunk],
+        errors: list[str] | None = None,
+        source_tokens: int | None = None,
+    ) -> DocumentReport:
+        """Audit single document for coverage, duplicate ratio, and orphan blocks."""
+        err_list = errors or []
+        if err_list:
+            return DocumentReport(
+                document_id=document_id,
+                source_path=source_path,
+                char_coverage_ratio=0.0,
+                duplicate_char_ratio=0.0,
+                orphan_blocks=0,
+                token_count_delta=0,
+                undersized_chunks_ratio=0.0,
+                chunk_count=0,
+                status="error",
+                errors=err_list,
+            )
+
+        cleaned_len = len(cleaned_text)
+        if cleaned_len == 0:
+            return DocumentReport(
+                document_id=document_id,
+                source_path=source_path,
+                char_coverage_ratio=1.0,
+                duplicate_char_ratio=0.0,
+                orphan_blocks=0,
+                token_count_delta=0,
+                undersized_chunks_ratio=0.0,
+                chunk_count=0,
+                status="ok",
+                errors=[],
+            )
+
+        covered_chars: set[int] = set()
+        total_chunk_chars = 0
+        for c in chunks:
+            total_chunk_chars += len(c.content)
+            for idx in range(max(0, c.start_char), min(cleaned_len, c.end_char)):
+                covered_chars.add(idx)
+
+        coverage_ratio = len(covered_chars) / cleaned_len
+        duplicate_chars = max(0, total_chunk_chars - len(covered_chars))
+        dup_ratio = duplicate_chars / cleaned_len
+
+        chunk_orphans = sum(1 for c in chunks if c.is_orphan_block)
+        scan_orphans = self._detect_orphan_blocks(cleaned_text, chunks)
+        orphans = max(chunk_orphans, scan_orphans)
+
+        undersized = sum(1 for c in chunks if c.token_count < self.min_chunk_size)
+        undersized_ratio = undersized / len(chunks) if chunks else 0.0
+
+        total_chunk_tokens = sum(c.token_count for c in chunks)
+        token_delta = (source_tokens - total_chunk_tokens) if source_tokens is not None else 0
+
+        status = "ok"
+        if coverage_ratio < self.coverage_threshold or dup_ratio > (
+            self.max_overlap_tolerance + 0.25
+        ):
+            status = "warning"
+        if orphans > 0:
+            status = "error"
+
+        return DocumentReport(
+            document_id=document_id,
+            source_path=source_path,
+            char_coverage_ratio=round(coverage_ratio, 4),
+            duplicate_char_ratio=round(dup_ratio, 4),
+            orphan_blocks=orphans,
+            token_count_delta=token_delta,
+            undersized_chunks_ratio=round(undersized_ratio, 4),
+            chunk_count=len(chunks),
+            status=status,
+            errors=[],
+        )
 
     def audit(
         self,
@@ -18,25 +142,49 @@ class IngestionMonitor:
         strategy_name: str,
         errors: list[str] | None = None,
     ) -> AuditReport:
-        """Evaluate document retention, overlap ratios, and orphan block counts."""
+        """Evaluate document retention, overlap ratios, and orphan block counts across corpus."""
         total_docs = len(docs)
         total_chunks = len(chunks)
         total_orig_chars = sum(d.char_count for d in docs)
         total_chunk_chars = sum(len(c.content) for c in chunks)
 
+        doc_chunks_map: dict[str, list[Chunk]] = {}
+        for c in chunks:
+            doc_chunks_map.setdefault(c.doc_id, []).append(c)
+
+        total_covered_chars = 0
+        doc_reports: list[DocumentReport] = []
+        for doc in docs:
+            d_chunks = doc_chunks_map.get(doc.id, [])
+            report = self.audit_document(
+                document_id=doc.id,
+                source_path=doc.file_path,
+                cleaned_text=doc.content,
+                chunks=d_chunks,
+            )
+            doc_reports.append(report)
+            covered: set[int] = set()
+            for c in d_chunks:
+                for idx in range(max(0, c.start_char), min(len(doc.content), c.end_char)):
+                    covered.add(idx)
+            total_covered_chars += len(covered)
+
         coverage_ratio = (
-            round(total_chunk_chars / total_orig_chars, 4)
+            round(total_covered_chars / total_orig_chars, 4)
             if total_orig_chars > 0
             else 1.0
         )
-
-        orphan_count = sum(1 for c in chunks if c.is_orphan_block)
+        orphan_count = sum(r.orphan_blocks for r in doc_reports)
         dup_ratio = round(
-            max(0.0, (total_chunk_chars - total_orig_chars) / max(1, total_orig_chars)),
+            max(0.0, (total_chunk_chars - total_covered_chars) / max(1, total_orig_chars)),
             4,
         )
 
-        passed = (coverage_ratio >= self.coverage_threshold) and (orphan_count == 0)
+        passed = (
+            (coverage_ratio >= self.coverage_threshold)
+            and (orphan_count == 0)
+            and not (errors or [])
+        )
         status = "PASSED" if passed else "FAILED"
 
         metrics = IngestionMetrics(
@@ -57,3 +205,30 @@ class IngestionMonitor:
             document_ids=[d.id for d in docs],
             errors=errors or [],
         )
+
+    def create_ingestion_report(
+        self,
+        corpus_path: str,
+        strategy_used: str,
+        doc_reports: list[DocumentReport],
+    ) -> IngestionReport:
+        """Construct aggregated IngestionReport model from per-document audit reports."""
+        total_chunks = sum(r.chunk_count for r in doc_reports)
+        docs_in_error = sum(1 for r in doc_reports if r.status == "error" or len(r.errors) > 0)
+        has_blocking = docs_in_error > 0 or any(r.orphan_blocks > 0 for r in doc_reports)
+        avg_coverage = (
+            sum(r.char_coverage_ratio for r in doc_reports) / len(doc_reports)
+            if doc_reports
+            else 1.0
+        )
+        return IngestionReport(
+            corpus_path=corpus_path,
+            strategy_used=strategy_used,
+            execution_timestamp=datetime.now(timezone.utc),
+            documents=doc_reports,
+            total_chunks=total_chunks,
+            global_char_coverage_ratio=round(avg_coverage, 4),
+            documents_in_error=docs_in_error,
+            has_blocking_alerts=has_blocking,
+        )
+

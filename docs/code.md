@@ -21,6 +21,7 @@
 - **`tests/`:** Unit and integration test suite.
   - **`tests/unit/test_cleaner.py`:** Unit tests verifying NFKC normalization, whitespace capping, line deduplication, structural shielding, and CleanError handling.
   - **`tests/unit/test_models.py`:** Unit tests verifying domain model immutability (`frozen=True`), extra field rejection (`extra="forbid"`), StrategyType enum, and aliases.
+  - **`tests/unit/test_monitor.py`:** Unit tests verifying character coverage ratio calculation, low coverage warning status, orphan Markdown table detection, empty document handling, duplicate character ratios, and report aggregation.
   - **`tests/unit/test_env.py`:** Unit tests verifying environment settings, logging, and core package imports.
   - **`tests/unit/test_exceptions.py`:** Unit tests verifying exception hierarchy inheritance, details payloads, to_dict serialization, and polymorphic error handling.
   - **`tests/unit/test_tooling.py`:** Unit tests validating ruff.toml, pyproject.toml MyPy strict configuration, and Makefile shortcuts.
@@ -169,6 +170,23 @@
 - **`test_document_report_model()`:** Validates per-document report defaults, status fields, and immutability.
 - **`test_ingestion_report_model()`:** Ensures `IngestionReport` timestamp auto-generation, list nesting, and immutability.
 - **`test_audit_report_and_metrics_immutability()`:** Verifies immutability of legacy `IngestionMetrics` and `AuditReport` models.
+
+### Ingestion Quality Monitor & Audit Engine
+
+#### `src/ingestion/monitor.py`
+- **`IngestionMonitor(__init__)`:** Configures threshold boundaries for `min_chunk_size` (default 20), `max_overlap_tolerance` (default 0.05), and `coverage_threshold` (default 0.98).
+- **`IngestionMonitor._detect_orphan_blocks(cleaned_text: str, chunks: list[Chunk]) -> int`:** Scans cleaned source text with regular expressions for Markdown tables (`^\|.*\|$`) and code blocks (``` / ~~~), verifying whether any structural block spans across chunk boundaries without complete preservation in a single chunk.
+- **`IngestionMonitor.audit_document(document_id, source_path, cleaned_text, chunks, errors, source_tokens) -> DocumentReport`:** Audits a single document, calculating unique character coverage set, duplicate character ratio, orphan block count, undersized chunk ratio, and status (`"ok"`, `"warning"`, `"error"`).
+- **`IngestionMonitor.audit(docs, chunks, strategy_name, errors) -> AuditReport`:** Evaluates retention metrics and orphan counts across a collection of documents, returning an `AuditReport` with global `IngestionMetrics`.
+- **`IngestionMonitor.create_ingestion_report(corpus_path, strategy_used, doc_reports) -> IngestionReport`:** Aggregates per-document audit reports into a structured `IngestionReport` deliverable with overall status and blocking alert flags.
+
+#### `tests/unit/test_monitor.py`
+- **`test_ingestion_monitor_pass()`:** Verifies monitor produces PASSED status when character coverage ratio $\ge 0.98$ and zero orphan blocks exist.
+- **`test_ingestion_monitor_low_coverage_warning()`:** Verifies monitor flags low coverage (< 98%) with FAILED audit status and warning document status.
+- **`test_ingestion_monitor_orphan_detection()`:** Verifies orphan Markdown tables split across chunk boundaries trigger error status.
+- **`test_audit_document_empty_and_errors()`:** Tests `audit_document` behavior on empty document strings and explicitly passed error lists.
+- **`test_duplicate_char_ratio_calculation()`:** Validates duplicate character ratio computation for overlapping chunk spans.
+- **`test_create_ingestion_report()`:** Validates creation and aggregation of structured `IngestionReport` objects.
 
 ### Quality Assurance & Tooling Tests
 

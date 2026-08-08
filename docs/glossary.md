@@ -154,5 +154,14 @@ The process of recursively breaking text down into contiguous atomic character r
 ### Orphan Block Flag
 A boolean property (`is_orphan_block`) indicating whether a chunk boundary cuts through a protected structural element like a Markdown table or code block.
 
+### Character Coverage Ratio (`char_coverage_ratio`)
+The ratio of unique source document characters present in at least one generated chunk divided by the total character count of the cleaned text.
 
+### Duplicate Character Ratio (`duplicate_char_ratio`)
+The proportion of extra character occurrences across generated chunks resulting from configured chunk overlap or duplicate segmentation.
 
+### Token Delta (`token_count_delta`)
+The difference between total source document tokens and aggregate tokens across generated chunks.
+
+### Undersized Chunk
+A chunk whose total token or character count falls below a specified minimum threshold.
