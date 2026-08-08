@@ -62,5 +62,17 @@
 ### Q12: How does the exception hierarchy support non-crashing directory batch ingestion?
 **Answer:** The batch pipeline orchestrator wraps per-file ingestion stages in `try...except IngestionError as exc:`. Caught exceptions are serialized using `exc.to_dict()` and attached to the file's `DocumentReport.errors` list, allowing batch execution to continue uninterrupted for remaining files.
 
+---
 
+### Q13: Why use Pydantic `ConfigDict(frozen=True, extra="forbid")` for RAG domain models?
+**Answer:** Immutability (`frozen=True`) prevents accidental data mutation during text processing pipeline stages, ensuring audit reproducibility. Forbidding extra fields (`extra="forbid"`) catches schema drift, typo bugs, and unexpected API inputs early at the domain boundary.
 
+---
+
+### Q14: How does inheriting from `BaseDomainModel` enforce strict typing and domain integrity?
+**Answer:** `BaseDomainModel` centralizes schema configuration, guaranteeing all downstream models (`LoadedDocument`, `Chunk`, `DocumentReport`, `IngestionReport`) inherit identical immutability and strict validation rules without duplicating configuration code across modules.
+
+---
+
+### Q15: How are backward compatibility and domain evolvability achieved when refactoring models?
+**Answer:** By creating alias mappings (e.g. `Document = LoadedDocument`) and property getters (e.g. `Chunk.document_id` pointing to `doc_id`), new strict schemas can be introduced without breaking pre-existing code that relies on legacy attribute names.

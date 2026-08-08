@@ -1,4 +1,4 @@
-"""Unit tests for Step 1.3 directory structure creation & package scaffolding."""
+"""Unit tests for package directory structure creation & package exports."""
 
 from pathlib import Path
 
@@ -61,9 +61,15 @@ def test_custom_exception_hierarchy() -> None:
 def test_package_exports() -> None:
     """Verify root ingestion package exports core domain models and exceptions."""
     expected_exports = [
+        "BaseDomainModel",
+        "StrategyType",
+        "IngestionConfig",
+        "LoadedDocument",
         "Document",
         "Chunk",
+        "DocumentReport",
         "IngestionMetrics",
+        "IngestionReport",
         "AuditReport",
         "IngestionError",
         "DocumentLoadError",

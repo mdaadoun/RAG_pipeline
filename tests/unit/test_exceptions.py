@@ -1,6 +1,5 @@
 """Unit tests for custom exception hierarchy."""
 
-import pytest
 from ingestion.exceptions import (
     AuditError,
     ChunkError,

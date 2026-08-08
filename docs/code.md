@@ -12,13 +12,14 @@
 - **`src/ingestion/`:** Modular RAG document ingestion pipeline components.
   - **`cli.py`:** Typer CLI entrypoint with Rich UI console tables and exit code gatekeeper.
   - **`pipeline.py`:** Orchestrator facade driving loaders ──► cleaner ──► chunkers ──► monitor ──► exporters.
-  - **`models.py`:** Immutable domain models (`IngestionConfig`, `LoadedDocument`, `Chunk`, `AuditReport`).
+  - **`models.py`:** Immutable Pydantic domain models (`BaseDomainModel`, `StrategyType`, `IngestionConfig`, `LoadedDocument`, `Chunk`, `DocumentReport`, `IngestionReport`, `IngestionMetrics`, `AuditReport`).
   - **`exceptions.py`:** Hierarchy inheriting from base `IngestionError`.
   - **`loaders.py`:** Abstract loader interface and concrete text/markdown file loaders.
   - **`cleaner.py`:** Text cleaner engine supporting NFKC normalization and protected Markdown shielding.
   - **`chunkers.py`:** Fixed-size token chunker and recursive structural heading chunker via `tiktoken`.
   - **`monitor.py`:** Quality assurance and information loss audit engine computing coverage & orphan block metrics.
 - **`tests/`:** Unit and integration test suite.
+  - **`tests/unit/test_models.py`:** Unit tests verifying domain model immutability (`frozen=True`), extra field rejection (`extra="forbid"`), StrategyType enum, and aliases.
   - **`tests/unit/test_env.py`:** Unit tests verifying environment settings, logging, and core package imports.
   - **`tests/unit/test_exceptions.py`:** Unit tests verifying exception hierarchy inheritance, details payloads, to_dict serialization, and polymorphic error handling.
   - **`tests/unit/test_tooling.py`:** Unit tests validating ruff.toml, pyproject.toml MyPy strict configuration, and Makefile shortcuts.
@@ -38,6 +39,21 @@
 - **`setup_logging(log_level: str = "INFO") -> None`:** Initializes `structlog` processors for ISO-8601 timestamps, log level tagging, context variable merging, and JSON rendering.
 - **`get_logger(name: str = "ingestion") -> Any`:** Factory function returning a bound structured logger instance.
 
+### Domain Schemas & Data Contracts
+
+#### `src/ingestion/models.py`
+- **`BaseDomainModel(BaseModel)`:** Base immutable Pydantic V2 domain model configured with `frozen=True` and `extra="forbid"`.
+- **`StrategyType(str, Enum)`:** String-backed enumeration defining `FIXED` ("fixed") and `RECURSIVE` ("recursive") chunking strategies.
+- **`IngestionConfig(BaseDomainModel)`:** Validates execution parameters for chunking size, overlap, minimum size, coverage threshold (`0.98`), and directory paths.
+- **`LoadedDocument(BaseDomainModel)`:** Domain model for loaded source documents with `char_count` and `token_count` property accessors. Aliased to `Document`.
+- **`Chunk(BaseDomainModel)`:** Model for document text slices containing character boundaries, token counts, orphan block flags, and `document_id` property alias.
+- **`DocumentReport(BaseDomainModel)`:** Per-document structural audit report encapsulating coverage ratios, duplicate ratios, and orphan block counts.
+- **`IngestionReport(BaseDomainModel)`:** Global structured audit deliverable tracking total chunks, global character coverage, document errors, and execution timestamp.
+- **`IngestionMetrics(BaseDomainModel)` & `AuditReport(BaseDomainModel)`:** Legacy aggregate statistical metrics models maintained for backward compatibility.
+
+#### `src/ingestion/__init__.py`
+- **Package Root:** Re-exports core domain models (`BaseDomainModel`, `StrategyType`, `IngestionConfig`, `LoadedDocument`, `Document`, `Chunk`, `DocumentReport`, `IngestionMetrics`, `IngestionReport`, `AuditReport`) and custom exception classes (`IngestionError`, `DocumentLoadError`, `CleanError`, `ChunkError`, `AuditError`) in `__all__`.
+
 ### Custom Exception Hierarchy & Structure
 
 #### `src/ingestion/exceptions.py`
@@ -48,18 +64,17 @@
 - **`ChunkError(IngestionError)`:** Exception raised during document text chunking operations.
 - **`AuditError(IngestionError)`:** Exception raised when quality audit checks or thresholds fail.
 
-#### `src/ingestion/__init__.py`
-- **Package Root:** Re-exports core domain models (`Document`, `Chunk`, `IngestionMetrics`, `AuditReport`) and custom exception classes (`IngestionError`, `DocumentLoadError`, `CleanError`, `ChunkError`, `AuditError`) in `__all__`.
+### Domain Model Unit Tests
 
-### Custom Exception Unit Tests
-
-#### `tests/unit/test_exceptions.py`
-- **`test_ingestion_error_base_properties()`:** Verifies `IngestionError` string representation, message attribute, and default empty `details` payload.
-- **`test_ingestion_error_with_details()`:** Validates custom dictionary context passing to exception instances.
-- **`test_ingestion_error_to_dict()`:** Verifies JSON dictionary format emitted by `to_dict()`.
-- **`test_derived_exceptions_inheritance()`:** Confirms inheritance from both `IngestionError` and standard `Exception`.
-- **`test_derived_exceptions_polymorphic_catch()`:** Ensures derived exceptions are caught by `except IngestionError:` blocks while retaining specific details.
-- **`test_all_derived_exceptions_to_dict_type_names()`:** Validates that `to_dict()["error_type"]` dynamically emits exact child class names.
+#### `tests/unit/test_models.py`
+- **`test_base_domain_model_immutability_and_extra_forbid()`:** Verifies `BaseDomainModel` enforces `frozen=True` and `extra="forbid"` on child classes.
+- **`test_strategy_type_enum()`:** Validates string representation and value parsing for `StrategyType.FIXED` and `StrategyType.RECURSIVE`.
+- **`test_ingestion_config_defaults_and_validation()`:** Verifies `IngestionConfig` default parameters and validation bounds.
+- **`test_loaded_document_and_alias()`:** Tests `LoadedDocument` instantiation, `Document` alias identity, and `char_count`/`token_count` properties.
+- **`test_chunk_model_properties_and_immutability()`:** Confirms `Chunk` field requirements, `document_id` property accessor, and field mutation rejection.
+- **`test_document_report_model()`:** Validates per-document report defaults, status fields, and immutability.
+- **`test_ingestion_report_model()`:** Ensures `IngestionReport` timestamp auto-generation, list nesting, and immutability.
+- **`test_audit_report_and_metrics_immutability()`:** Verifies immutability of legacy `IngestionMetrics` and `AuditReport` models.
 
 ### Quality Assurance & Tooling Tests
 
@@ -67,7 +82,7 @@
 - **`test_package_directory_structure_exists()`:** Verifies all required package files exist in `src/ingestion/`.
 - **`test_test_directories_exist()`:** Verifies required test subdirectories (`unit/`, `integration/`, `fixtures/`) exist.
 - **`test_custom_exception_hierarchy()`:** Validates custom exception class hierarchy and inheritance.
-- **`test_package_exports()`:** Confirms package root exports all core models and exception symbols.
+- **`test_package_exports()`:** Confirms package root exports all core model and exception symbols.
 
 #### `tests/unit/test_tooling.py`
 - **`test_ruff_config_exists_and_valid()`:** Validates existence and parsing of standalone `ruff.toml` linting rules.
@@ -88,4 +103,3 @@
 - **`pyproject.toml`:** Dependency declarations (Poetry), CLI scripts, MyPy strict options, Pytest coverage rules.
 - **`Makefile`:** Shortcuts (`make install`, `make lint`, `make test`, `make dev`, `make clean`, `make docker-build`).
 - **`Dockerfile`:** Multi-stage production container image specification.
-

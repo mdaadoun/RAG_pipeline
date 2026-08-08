@@ -7,12 +7,29 @@ from ingestion.exceptions import (
     DocumentLoadError,
     IngestionError,
 )
-from ingestion.models import AuditReport, Chunk, Document, IngestionMetrics
+from ingestion.models import (
+    AuditReport,
+    BaseDomainModel,
+    Chunk,
+    Document,
+    DocumentReport,
+    IngestionConfig,
+    IngestionMetrics,
+    IngestionReport,
+    LoadedDocument,
+    StrategyType,
+)
 
 __all__ = [
+    "BaseDomainModel",
+    "StrategyType",
+    "IngestionConfig",
+    "LoadedDocument",
     "Document",
     "Chunk",
+    "DocumentReport",
     "IngestionMetrics",
+    "IngestionReport",
     "AuditReport",
     "IngestionError",
     "DocumentLoadError",
@@ -20,4 +37,3 @@ __all__ = [
     "ChunkError",
     "AuditError",
 ]
-

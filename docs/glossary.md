@@ -57,6 +57,24 @@ Software design pattern where callers catch multiple stage-specific exceptions u
 ### Test Runner Registration
 Structuring tests into standard Pytest module hierarchies (`tests/unit/`, `tests/integration/`) for automated discovery and execution in test runners.
 
+### BaseDomainModel
+Abstract immutable root Pydantic V2 model configuring frozen state (`frozen=True`) and forbidding extra fields (`extra="forbid"`) across all domain schemas.
+
+### StrategyType
+String-backed enumeration specifying valid document chunking strategies (`FIXED = "fixed"` or `RECURSIVE = "recursive"`).
+
+### IngestionConfig
+Domain model encapsulating chunking, coverage threshold, and directory path configuration with value validations.
+
+### LoadedDocument
+Immutable domain representation of a raw loaded source document, including content, file path, and calculated character/token properties.
+
+### DocumentReport
+Per-document structural audit report encapsulating character coverage, duplicate character ratios, and orphan block counts.
+
+### IngestionReport
+Global structured audit report deliverable recording total chunks, global character coverage, and blocking alerts.
+
 ---
 
 ## 🤖 2. RAG Ingestion & Document Processing
