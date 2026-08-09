@@ -1,15 +1,11 @@
 """Unit tests for PipelineOrchestrator facade and backward-compat wrapper."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from ingestion.models import (
     AuditReport,
-    Chunk,
-    Document,
-    DocumentReport,
     IngestionConfig,
     IngestionMetrics,
     IngestionReport,
@@ -22,7 +18,6 @@ from ingestion.pipeline import (
     _build_chunker,
     _discover_files,
 )
-
 
 # --- Config & Factory Tests ---
 

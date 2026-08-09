@@ -18,8 +18,10 @@
   - **`loaders.py`:** Abstract loader interface and concrete text/markdown file loaders.
   - **`cleaner.py`:** Text cleaner engine supporting NFKC normalization, whitespace capping, boilerplate deduplication, and protected Markdown shielding.
   - **`chunkers.py`:** Fixed-size token chunker and recursive structural heading chunker via `tiktoken`.
+  - **`exporters.py`:** Serialization exporters (`BaseExporter`, `JSONLChunkExporter`, `AuditReportExporter`) and procedural functions for JSONL chunks and JSON reports.
   - **`monitor.py`:** Quality assurance and information loss audit engine computing coverage & orphan block metrics.
 - **`tests/`:** Unit and integration test suite.
+  - **`tests/unit/test_exporters.py`:** Unit tests verifying JSONL stream/batch export, AuditReport and IngestionReport JSON formatting, deserialization, and error handling.
   - **`tests/unit/test_cleaner.py`:** Unit tests verifying NFKC normalization, whitespace capping, line deduplication, structural shielding, and CleanError handling.
   - **`tests/unit/test_models.py`:** Unit tests verifying domain model immutability (`frozen=True`), extra field rejection (`extra="forbid"`), StrategyType enum, and aliases.
   - **`tests/unit/test_monitor.py`:** Unit tests verifying character coverage ratio calculation, low coverage warning status, orphan Markdown table detection, empty document handling, duplicate character ratios, and report aggregation.
@@ -271,6 +273,24 @@
 - **`test_shield_audit_error_returns_error_report()`:** Verifies `_shield_audit` returns error `DocumentReport` on monitor failure.
 - **`test_batch_continues_after_file_error()`:** Verifies batch run continues processing valid files after one file fails.
 - **`test_traceback_preserved_in_error_report()`:** Verifies traceback info propagates through `FileShieldContext` to `DocumentReport.errors`.
+
+### JSONL & Audit Report Exporters
+
+#### `src/ingestion/exporters.py`
+- **`BaseExporter(ABC, Generic[T])`:** Abstract base class defining uniform `export(data: T, output_path: str | Path) -> Path` contract for all serialization exporters.
+- **`JSONLChunkExporter(BaseExporter[list[Chunk]])`:** Concrete exporter serializing `Chunk` domain models to JSON Lines (`.jsonl`) format with batch `export()`, streaming `export_stream()`, and round-trip `read()` validation.
+- **`AuditReportExporter(BaseExporter[BaseDomainModel])`:** Concrete exporter serializing `AuditReport` or `IngestionReport` models to formatted JSON (`indent=2`) with `export()`, `read_audit_report()`, and `read_ingestion_report()`.
+- **`export_chunks_jsonl(chunks, output_path) -> Path`:** Procedural helper function delegating to `JSONLChunkExporter().export()`.
+- **`export_audit_report(report, output_path) -> Path`:** Procedural helper function delegating to `AuditReportExporter().export()`.
+
+#### `tests/unit/test_exporters.py`
+- **`test_jsonl_chunk_exporter_export_and_read()`:** Verifies `JSONLChunkExporter` batch export and `read()` deserialization accuracy.
+- **`test_jsonl_chunk_exporter_stream()`:** Verifies `export_stream()` line-by-line generator streaming to JSONL.
+- **`test_jsonl_chunk_exporter_missing_file()`:** Ensures `AuditError` is raised when reading non-existent JSONL files.
+- **`test_audit_report_exporter_audit_report()`:** Validates `AuditReportExporter` formatting and `read_audit_report()` deserialization.
+- **`test_audit_report_exporter_ingestion_report()`:** Validates `AuditReportExporter` formatting and `read_ingestion_report()` deserialization.
+- **`test_audit_report_exporter_missing_files()`:** Ensures `AuditError` is raised when reading missing JSON report files.
+- **`test_procedural_export_helpers()`:** Tests `export_chunks_jsonl` and `export_audit_report` procedural helper functions.
 
 ### Quality Assurance & Tooling Tests
 

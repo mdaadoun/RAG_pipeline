@@ -15,6 +15,13 @@ from ingestion.exceptions import (
     DocumentLoadError,
     IngestionError,
 )
+from ingestion.exporters import (
+    AuditReportExporter,
+    BaseExporter,
+    JSONLChunkExporter,
+    export_audit_report,
+    export_chunks_jsonl,
+)
 from ingestion.file_shield import FileShieldContext, IngestionStage, StageError
 from ingestion.loaders import (
     DocumentLoader,
@@ -84,6 +91,11 @@ __all__ = [
     "RecursiveStructuralChunker",
     "OrphanBlockDetector",
     "StructuralBlock",
+    "BaseExporter",
+    "JSONLChunkExporter",
+    "AuditReportExporter",
+    "export_chunks_jsonl",
+    "export_audit_report",
     "PipelineOrchestrator",
     "PipelineResult",
     "IngestionPipeline",

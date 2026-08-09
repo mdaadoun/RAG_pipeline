@@ -247,5 +247,21 @@
 ### Q49: What is the trade-off of per-stage shielding vs. the previous monolithic try/except?
 **Answer:** Per-stage shielding adds ~80 LOC of shield methods but provides: (1) pinpoint error attribution to load/clean/chunk/audit, (2) traceback preservation for post-mortem, (3) independent testability of each shield, and (4) future extensibility for partial-success modes where some stages succeed before failure.
 
+---
+
+### Q50: Why use JSON Lines (JSONL) instead of a standard JSON array for document chunks?
+**Answer:** JSONL allows streaming line-by-line writing and memory-efficient parsing without loading the complete dataset array into memory. It is also the industry standard ingestion format for vector database indexers, fine-tuning datasets, and distributed stream processors.
+
+---
+
+### Q51: How do JSONLChunkExporter and AuditReportExporter handle directory creation and file I/O errors?
+**Answer:** Both exporters automatically create parent directories using `path.parent.mkdir(parents=True, exist_ok=True)`. File system access or parsing failures are caught and wrapped in `AuditError` with contextual failure details, preventing unhandled low-level tracebacks.
+
+---
+
+### Q52: How is backward compatibility preserved when introducing exporter classes into existing code?
+**Answer:** Legacy helper functions `save_chunks_jsonl` and `save_audit_report` in `json_utils.py` were updated to delegate directly to `export_chunks_jsonl()` and `export_audit_report()`. This maintains 100% API compatibility for CLI and legacy orchestrator callers.
+
+
 
 

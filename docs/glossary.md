@@ -215,4 +215,17 @@ Enum of named pipeline processing stages (`LOAD`, `CLEAN`, `CHUNK`, `AUDIT`) use
 ### Exception Shielding
 Design pattern where each sub-operation is wrapped in its own `try/except` block to prevent one failure from cascading and crashing the entire batch.
 
+### JSONL (JSON Lines)
+A streamable text format where each line is a valid JSON object, optimized for line-by-line parsing, vector database ingestion, and large dataset chunking.
+
+### JSONLChunkExporter
+Exporter module responsible for serializing `Chunk` domain models into UTF-8 encoded JSON Lines files with automatic parent directory creation.
+
+### AuditReportExporter
+Exporter module responsible for formatting and serializing `AuditReport` and `IngestionReport` domain models into indented JSON files.
+
+### Round-trip Deserialization
+The process of reading exported JSON/JSONL artifacts back into strongly typed Pydantic domain models to verify serialization losslessness and schema adherence.
+
+
 

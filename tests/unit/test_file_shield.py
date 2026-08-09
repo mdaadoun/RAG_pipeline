@@ -1,7 +1,7 @@
 """Unit tests for file-level exception shielding."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -10,9 +10,8 @@ from ingestion.file_shield import (
     IngestionStage,
     StageError,
 )
-from ingestion.pipeline import PipelineOrchestrator
 from ingestion.models import DocumentReport, IngestionConfig
-
+from ingestion.pipeline import PipelineOrchestrator
 
 # --- IngestionStage Enum ---
 
