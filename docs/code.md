@@ -11,6 +11,7 @@
   - **`config/logging.py`:** Structured JSON logging configurator using `structlog`.
 - **`src/ingestion/`:** Modular RAG document ingestion pipeline components.
   - **`cli.py`:** Typer CLI entrypoint with Rich UI console tables and exit code gatekeeper.
+  - **`corpus.py`:** Synthetic test corpus manager (`SyntheticCorpus`, `SyntheticFixtureSpec`, `DEFAULT_FIXTURES`) handling benchmark fixture loading, self-healing creation, and integrity validation.
   - **`pipeline.py`:** Orchestrator facade driving loaders ──► cleaner ──► chunkers ──► monitor ──► exporters with per-stage exception shielding.
   - **`file_shield.py`:** File-level exception shielding primitives (`IngestionStage`, `StageError`, `FileShieldContext`) for per-stage traceback capture.
   - **`models.py`:** Immutable Pydantic domain models (`BaseDomainModel`, `StrategyType`, `IngestionConfig`, `LoadedDocument`, `Chunk`, `DocumentReport`, `IngestionReport`, `IngestionMetrics`, `AuditReport`).
@@ -353,6 +354,22 @@
 - **`test_get_settings_caching()`:** Verifies identity (`is`) of cached settings instances across calls.
 - **`test_logging_setup()`:** Ensures structlog logger configuration executes cleanly.
 - **`test_core_dependencies_available()`:** Confirms `pydantic`, `structlog`, and `tiktoken` BPE encoders are importable and functional.
+
+### Synthetic Test Corpus Engine
+
+#### `src/ingestion/corpus.py`
+- **`SyntheticFixtureSpec(BaseDomainModel)`:** Immutable Pydantic domain model defining fixture metadata (`name`, `category`, `description`, `expected_behavior`, `file_path`).
+- **`SyntheticCorpus(BaseDomainModel)`:** Domain manager class providing `list_fixtures()`, `get_fixture_path()`, `load_fixture_content()`, `ensure_default_fixtures()`, and `validate_corpus()`.
+- **`DEFAULT_FIXTURES`:** Immutable constant dictionary containing default benchmark document definitions (`01_clean_doc.md`, `02_noisy_header.txt`, `03_table_split.md`, `04_corrupted_encoding.txt`).
+
+#### `tests/unit/test_corpus.py`
+- **`test_synthetic_fixture_spec_model()`:** Validates model instantiation and property defaults.
+- **`test_synthetic_corpus_list_fixtures()`:** Confirms `list_fixtures()` returns metadata for all 4 benchmark files.
+- **`test_synthetic_corpus_get_fixture_path()`:** Verifies automatic creation and path retrieval for named fixtures.
+- **`test_synthetic_corpus_unknown_fixture_raises_error()`:** Confirms `DocumentLoadError` is raised for unknown fixture names.
+- **`test_synthetic_corpus_load_fixture_content()`:** Validates string content reading for test fixtures.
+- **`test_synthetic_corpus_validate_corpus()`:** Confirms integrity check returns `True` for all active benchmark files.
+- **`test_default_fixtures_dictionary_completeness()`:** Verifies `DEFAULT_FIXTURES` includes all mandatory roadmap files and schema keys.
 
 ---
 

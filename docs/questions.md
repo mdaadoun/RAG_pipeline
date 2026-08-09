@@ -307,3 +307,18 @@
 ### Q61: What happens if a batch run processes 100 documents and a single file suffers a parsing error?
 **Answer:** The `FileShieldContext` isolates the error for that single document so the remaining 99 documents complete loading. However, `documents_in_error` becomes $> 0$, setting `has_blocking_alerts=True`, causing the `ExitCodeGatekeeper` to reject the build with exit code 1.
 
+---
+
+### Q62: Why create a dedicated `SyntheticCorpus` class instead of simply referencing file paths in pytest fixtures?
+**Answer:** Encapsulating corpus management in a domain module decouples tests and pipeline tools from hardcoded file system assumptions. It provides automatic fixture regeneration, metadata tracking, classification-based filtering, and programmatic integrity validation across both CLI tools and test runners.
+
+---
+
+### Q63: How do the 4 synthetic test fixtures validate different stages of the RAG ingestion pipeline?
+**Answer:** `01_clean_doc.md` establishes baseline character retention and 0-orphan chunking; `02_noisy_header.txt` tests cleaner noise removal and whitespace capping; `03_table_split.md` triggers orphan block detection under fixed-size chunking versus recursive preservation; `04_corrupted_encoding.txt` verifies NFKC unicode normalization.
+
+---
+
+### Q64: What trade-offs were considered when embedding default fixture contents directly in `corpus.py`?
+**Answer:** Embedding default fixture string templates in `DEFAULT_FIXTURES` ensures self-healing fixture initialization when running tests in clean isolated environments, at the cost of slight module size expansion.
+

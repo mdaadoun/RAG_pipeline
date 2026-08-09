@@ -27,6 +27,7 @@ def test_package_directory_structure_exists() -> None:
         "monitor.py",
         "pipeline.py",
         "cli.py",
+        "corpus.py",
     ]
     for filename in required_files:
         filepath = base_dir / filename
@@ -97,6 +98,9 @@ def test_package_exports() -> None:
         "RecursiveStructuralChunker",
         "OrphanBlockDetector",
         "StructuralBlock",
+        "DEFAULT_FIXTURES",
+        "SyntheticCorpus",
+        "SyntheticFixtureSpec",
     ]
     for symbol in expected_exports:
         assert hasattr(ingestion, symbol), f"Package missing export: {symbol}"

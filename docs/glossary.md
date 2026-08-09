@@ -253,3 +253,12 @@ Pre-defined numerical or structural criteria (e.g. 98% coverage threshold, zero 
 
 ### Blocking Alert
 Critical data quality failure condition such as fragmented markdown tables or parsing exceptions that invalidates RAG corpus validity.
+
+### Synthetic Test Corpus
+A curated collection of benchmark documents engineered with deliberate quality variations, header noise, structural blocks, and corruption patterns to evaluate ingestion pipeline robustness.
+
+### Fixture Metadata Specification
+An immutable domain schema (`SyntheticFixtureSpec`) capturing fixture attributes, category classification, test intent, and expected pipeline outcomes.
+
+### Self-Healing Corpus
+A management mechanism in `SyntheticCorpus` that automatically verifies and recreates missing benchmark files on disk prior to execution.

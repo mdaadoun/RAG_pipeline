@@ -8,6 +8,7 @@ from ingestion.chunkers import (
 )
 from ingestion.cleaner import TextCleaner
 from ingestion.console import RichConsoleRenderer
+from ingestion.corpus import DEFAULT_FIXTURES, SyntheticCorpus, SyntheticFixtureSpec
 from ingestion.detector import OrphanBlockDetector, StructuralBlock
 from ingestion.exceptions import (
     AuditError,
@@ -103,6 +104,9 @@ __all__ = [
     "IngestionPipeline",
     "RichConsoleRenderer",
     "ExitCodeGatekeeper",
+    "DEFAULT_FIXTURES",
+    "SyntheticCorpus",
+    "SyntheticFixtureSpec",
 ]
 
 
