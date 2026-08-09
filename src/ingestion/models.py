@@ -86,6 +86,12 @@ class Chunk(BaseDomainModel):
         """Alias property for doc_id."""
         return self.doc_id
 
+    @property
+    def char_count(self) -> int:
+        """Calculate total character length of chunk content."""
+        return len(self.content)
+
+
 
 class DocumentReport(BaseDomainModel):
     """Per-document structural audit report model."""

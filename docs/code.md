@@ -371,6 +371,19 @@
 - **`test_synthetic_corpus_validate_corpus()`:** Confirms integrity check returns `True` for all active benchmark files.
 - **`test_default_fixtures_dictionary_completeness()`:** Verifies `DEFAULT_FIXTURES` includes all mandatory roadmap files and schema keys.
 
+### Comparative Strategy Benchmark Engine
+
+#### `src/ingestion/benchmark.py`
+- **`BenchmarkStrategyMetrics(BaseDomainModel)`:** Immutable Pydantic domain model holding execution time, token/char averages, coverage ratios, orphan block counts, token deltas, and audit status for a strategy.
+- **`BenchmarkComparisonResult(BaseDomainModel)`:** Immutable Pydantic domain model storing dual strategy metrics, coverage delta, orphan reduction count, chunk count differences, and winning strategy recommendation.
+- **`StrategyBenchmarkRunner`:** Benchmark runner executing dual `PipelineOrchestrator` runs over target corpus directories, computing comparison metrics, determining the winning strategy, and rendering GitHub Markdown summary tables.
+
+#### `tests/unit/test_benchmark.py`
+- **`test_benchmark_models_immutability()`:** Verifies `BenchmarkStrategyMetrics` and `BenchmarkComparisonResult` model instantiation, immutability, and attribute integrity.
+- **`test_strategy_benchmark_runner_execution()`:** Confirms `StrategyBenchmarkRunner` executes dual strategy comparison over corpus fixtures and determines `winning_strategy`.
+- **`test_format_markdown_table()`:** Verifies `format_markdown_table()` outputs expected GitHub Markdown comparative table layout.
+- **`test_benchmark_cli_command()`:** Confirms Typer CLI `benchmark` subcommand and `--benchmark` option execute cleanly and print summary tables.
+
 ---
 
 ## 📦 3. Manifest & Automation
@@ -379,3 +392,4 @@
 - **`pyproject.toml`:** Dependency declarations (Poetry), CLI scripts, MyPy strict options, Pytest coverage rules.
 - **`Makefile`:** Shortcuts (`make install`, `make lint`, `make test`, `make dev`, `make clean`, `make docker-build`).
 - **`Dockerfile`:** Multi-stage production container image specification.
+

@@ -1,5 +1,10 @@
 """Ingestion pipeline package."""
 
+from ingestion.benchmark import (
+    BenchmarkComparisonResult,
+    BenchmarkStrategyMetrics,
+    StrategyBenchmarkRunner,
+)
 from ingestion.chunkers import (
     BaseChunker,
     ChunkingStrategy,
@@ -107,7 +112,11 @@ __all__ = [
     "DEFAULT_FIXTURES",
     "SyntheticCorpus",
     "SyntheticFixtureSpec",
+    "BenchmarkStrategyMetrics",
+    "BenchmarkComparisonResult",
+    "StrategyBenchmarkRunner",
 ]
+
 
 
 

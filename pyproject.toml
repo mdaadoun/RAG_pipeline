@@ -44,6 +44,7 @@ ignore = ["E501", "UP017"]
 python_version = "3.11"
 strict = true
 mypy_path = "src"
+explicit_package_bases = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true

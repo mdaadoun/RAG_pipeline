@@ -28,6 +28,7 @@ def test_package_directory_structure_exists() -> None:
         "pipeline.py",
         "cli.py",
         "corpus.py",
+        "benchmark.py",
     ]
     for filename in required_files:
         filepath = base_dir / filename
@@ -101,9 +102,13 @@ def test_package_exports() -> None:
         "DEFAULT_FIXTURES",
         "SyntheticCorpus",
         "SyntheticFixtureSpec",
+        "BenchmarkStrategyMetrics",
+        "BenchmarkComparisonResult",
+        "StrategyBenchmarkRunner",
     ]
     for symbol in expected_exports:
         assert hasattr(ingestion, symbol), f"Package missing export: {symbol}"
+
 
 
 

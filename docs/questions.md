@@ -322,3 +322,19 @@
 ### Q64: What trade-offs were considered when embedding default fixture contents directly in `corpus.py`?
 **Answer:** Embedding default fixture string templates in `DEFAULT_FIXTURES` ensures self-healing fixture initialization when running tests in clean isolated environments, at the cost of slight module size expansion.
 
+---
+
+### Q65: Why is comparative strategy benchmarking critical before deploying a RAG chunking pipeline?
+**Answer:** Chunking strategy directly dictates downstream RAG retrieval accuracy. Comparative benchmarking over synthetic test corpora exposes hidden structural splits (e.g., broken Markdown tables or orphaned code blocks) and token drift before vector indexing, enabling empirical selection of the optimal strategy.
+
+---
+
+### Q66: How does `StrategyBenchmarkRunner` evaluate winning strategy selection between Fixed and Recursive chunkers?
+**Answer:** The runner executes dual pipeline runs and compares `BenchmarkStrategyMetrics`. It evaluates quality gate compliance, prioritizing zero orphan blocks (`orphan_blocks == 0`) and higher character coverage ratio. If fixed chunking produces orphan blocks while recursive chunking preserves structural integrity, recursive chunking is automatically designated as the winning strategy.
+
+---
+
+### Q67: What structural and retrieval trade-offs exist between `FixedSizeChunker` and `RecursiveStructuralChunker`?
+**Answer:** `FixedSizeChunker` operates on rigid token count boundaries with lower splitting overhead, but severs Markdown tables and multi-line code blocks mid-structure. `RecursiveStructuralChunker` evaluates structural delimiters hierarchically, eliminating orphan blocks and maintaining semantic context at the cost of slight token size variation.
+
+

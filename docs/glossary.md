@@ -262,3 +262,16 @@ An immutable domain schema (`SyntheticFixtureSpec`) capturing fixture attributes
 
 ### Self-Healing Corpus
 A management mechanism in `SyntheticCorpus` that automatically verifies and recreates missing benchmark files on disk prior to execution.
+
+### Comparative Strategy Benchmark
+Empirical evaluation framework contrasting performance, character coverage, token delta, and structural orphan metrics across multiple chunking strategies.
+
+### Winning Strategy Selection
+Automated decision logic designating the optimal chunking strategy based on quality gate pass/fail status, zero orphan blocks, and superior character coverage.
+
+### Coverage Delta
+Mathematical difference in global character coverage ratio between recursive structural chunking and fixed-size chunking strategies.
+
+### Orphan Block Reduction
+The net decrease in fragmented structural elements (tables and code blocks) achieved when moving from fixed to recursive structural chunking.
+
