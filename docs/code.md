@@ -384,6 +384,17 @@
 - **`test_format_markdown_table()`:** Verifies `format_markdown_table()` outputs expected GitHub Markdown comparative table layout.
 - **`test_benchmark_cli_command()`:** Confirms Typer CLI `benchmark` subcommand and `--benchmark` option execute cleanly and print summary tables.
 
+### Quality Gates & Final Delivery Engine
+
+#### `src/ingestion/quality_gate.py`
+- **`QualityGateResult(BaseDomainModel)`:** Immutable Pydantic domain model encapsulating mypy, ruff, pytest, coverage, and deliverable report schema verification outcomes (`mypy_passed`, `ruff_passed`, `pytest_passed`, `coverage_passed`, `report_verified`, `all_passed`, `coverage_ratio`, `details`).
+- **`QualityGateRunner`:** Verification engine executing mypy strict checks, ruff linter checks, pytest suite coverage calculations, and JSON deliverable schema validation (`verify_deliverable_schema()`, `run_typing_check()`, `run_lint_check()`, `run_test_suite()`, `evaluate_all()`).
+
+#### `tests/unit/test_quality_gate.py`
+- **`test_quality_gate_result_model_immutability()`:** Verifies `QualityGateResult` immutability (`frozen=True`) and extra field rejection (`extra="forbid"`).
+- **`test_verify_deliverable_schema()`:** Validates schema checking for missing, corrupted, incomplete, and valid `rapport_ingestion.json` deliverables.
+- **`test_quality_gate_runner_checks()`:** Confirms `QualityGateRunner` executes code quality checks with monkeypatched subprocesses and verifies `evaluate_all()`.
+
 ---
 
 ## 📦 3. Manifest & Automation

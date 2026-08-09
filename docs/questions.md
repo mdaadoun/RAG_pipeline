@@ -337,4 +337,20 @@
 ### Q67: What structural and retrieval trade-offs exist between `FixedSizeChunker` and `RecursiveStructuralChunker`?
 **Answer:** `FixedSizeChunker` operates on rigid token count boundaries with lower splitting overhead, but severs Markdown tables and multi-line code blocks mid-structure. `RecursiveStructuralChunker` evaluates structural delimiters hierarchically, eliminating orphan blocks and maintaining semantic context at the cost of slight token size variation.
 
+---
+
+### Q68: How does the Quality Gate Runner enforce release quality in CI/CD pipelines?
+**Answer:** The `QualityGateRunner` programmatically executes mypy strict mode, ruff linting, pytest test suite, coverage analysis, and deliverable schema validation. If any check fails or coverage drops below 85%, `QualityGateResult` flags `all_passed=False` and the CLI exits with code 1 to block faulty deployments.
+
+---
+
+### Q69: Why is final deliverable schema verification necessary alongside code unit testing?
+**Answer:** Unit tests confirm individual function behaviors, but final deliverable verification ensures the end-to-end pipeline produced a valid, uncorrupted audit report artifact (`rapport_ingestion.json`) with required metadata keys and `PASSED` status in real production runs.
+
+---
+
+### Q70: How are Pydantic domain models leveraged for quality gate reporting?
+**Answer:** `QualityGateResult` inherits from `BaseDomainModel` (`frozen=True`, `extra="forbid"`), providing immutable, strongly-typed representations of release readiness that can be safely serialized or inspected.
+
+
 

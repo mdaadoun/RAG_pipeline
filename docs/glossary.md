@@ -275,3 +275,13 @@ Mathematical difference in global character coverage ratio between recursive str
 ### Orphan Block Reduction
 The net decrease in fragmented structural elements (tables and code blocks) achieved when moving from fixed to recursive structural chunking.
 
+### Quality Gate Runner
+Automated verification module executing code quality checks (mypy, ruff, pytest) and output deliverable validation before release.
+
+### Final Delivery Verification
+The end-to-end validation step confirming code quality thresholds and structural compliance of audit report artifacts.
+
+### Deliverable Schema Compliance
+Structural validation verifying that output files like `rapport_ingestion.json` contain required domain metadata and a `PASSED` status.
+
+

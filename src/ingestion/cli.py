@@ -14,6 +14,7 @@ from ingestion.exceptions import IngestionError
 from ingestion.gatekeeper import ExitCodeGatekeeper
 from ingestion.models import IngestionConfig, StrategyType
 from ingestion.pipeline import PipelineOrchestrator
+from ingestion.quality_gate import QualityGateRunner
 
 app = typer.Typer(
     name="ingest",
@@ -33,13 +34,9 @@ def _execute_run(
     report: Path,
 ) -> None:
     """Execute end-to-end ingestion pipeline."""
-    settings = get_settings()
-    setup_logging(settings.log_level)
-
+    setup_logging(get_settings().log_level)
     if strategy not in [s.value for s in StrategyType]:
-        raise IngestionError(
-            f"Invalid strategy '{strategy}'. Valid choices: fixed, recursive"
-        )
+        raise IngestionError(f"Invalid strategy '{strategy}'. Valid choices: fixed, recursive")
 
     renderer = RichConsoleRenderer(console)
     console.print(renderer.render_header(strategy, input_dir))
@@ -55,12 +52,7 @@ def _execute_run(
     )
 
     orchestrator = PipelineOrchestrator(config)
-    result = orchestrator.run(
-        input_dir=input_dir,
-        output_dir=output_dir,
-        report_path=report,
-    )
-
+    result = orchestrator.run(input_dir=input_dir, output_dir=output_dir, report_path=report)
     renderer.render_pipeline_result(result)
 
     gatekeeper = ExitCodeGatekeeper(coverage_threshold=config.coverage_threshold)
@@ -71,21 +63,11 @@ def _execute_run(
         raise typer.Exit(code=gatekeeper.evaluate(result))
 
 
-def _execute_benchmark(
-    input_dir: Path | None,
-    chunk_size: int,
-    overlap: int,
-) -> None:
+def _execute_benchmark(input_dir: Path | None, chunk_size: int, overlap: int) -> None:
     """Execute comparative benchmark."""
     runner = StrategyBenchmarkRunner()
-    result = runner.run_benchmark(
-        input_dir=input_dir,
-        chunk_size=chunk_size,
-        overlap=overlap,
-    )
-    console.print(
-        "\n[bold cyan]=== Comparative Strategy Benchmark Results ===[/bold cyan]\n"
-    )
+    result = runner.run_benchmark(input_dir=input_dir, chunk_size=chunk_size, overlap=overlap)
+    console.print("\n[bold cyan]=== Comparative Strategy Benchmark Results ===[/bold cyan]\n")
     console.print(runner.format_markdown_table(result))
     console.print(
         f"\n[bold green]Recommended Strategy:[/bold green] {result.winning_strategy.value.upper()}"
@@ -94,218 +76,88 @@ def _execute_benchmark(
         console.print(f" • {note}")
 
 
+def _execute_verify(report_path: Path) -> None:
+    """Execute quality gates & final delivery verification."""
+    runner = QualityGateRunner()
+    res = runner.evaluate_all(report_path)
+    console.print("\n[bold cyan]=== Quality Gates & Final Delivery Verification ===[/bold cyan]")
+    console.print(f"Mypy Strict Check: {'PASSED' if res.mypy_passed else 'FAILED'}")
+    console.print(f"Ruff Lint Check: {'PASSED' if res.ruff_passed else 'FAILED'}")
+    console.print(f"Pytest Test Suite: {'PASSED' if res.pytest_passed else 'FAILED'}")
+    console.print(f"Coverage Ratio: {res.coverage_ratio:.2%}")
+    console.print(f"Deliverable Verification: {'PASSED' if res.report_verified else 'FAILED'}")
+    if res.all_passed:
+        console.print("[bold green]\nStatus: ALL QUALITY GATES PASSED (RELEASE READY)[/bold green]")
+    else:
+        console.print("[bold red]\nStatus: QUALITY GATES FAILED[/bold red]")
+        for detail in res.details:
+            console.print(f"[red] - {detail}[/red]")
+        raise typer.Exit(code=1)
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
-    input_dir: Annotated[
-        Path,
-        typer.Option(
-            "--input",
-            "-i",
-            help="Directory containing source text/markdown documents",
-        ),
-    ] = Path("./data/input"),
-    output_dir: Annotated[
-        Path,
-        typer.Option(
-            "--output",
-            "-o",
-            help="Output directory for serialized JSONL chunks",
-        ),
-    ] = Path("./data/output"),
-    strategy: Annotated[
-        str,
-        typer.Option(
-            "--strategy",
-            "-s",
-            help="Chunking strategy: 'fixed' or 'recursive'",
-        ),
-    ] = "recursive",
-    chunk_size: Annotated[
-        int,
-        typer.Option(
-            "--chunk-size",
-            "-c",
-            help="Target chunk size in characters/tokens",
-        ),
-    ] = 512,
-    overlap: Annotated[
-        int,
-        typer.Option(
-            "--overlap",
-            help="Overlap character size",
-        ),
-    ] = 64,
-    min_chunk_size: Annotated[
-        int,
-        typer.Option(
-            "--min-chunk-size",
-            help="Minimum character threshold",
-        ),
-    ] = 50,
-    report: Annotated[
-        Path,
-        typer.Option(
-            "--report",
-            "-r",
-            help="Destination file path for global audit report JSON",
-        ),
-    ] = Path("rapport_ingestion.json"),
-    benchmark: Annotated[
-        bool,
-        typer.Option(
-            "--benchmark",
-            "-b",
-            help="Run comparative benchmark between fixed and recursive strategies",
-        ),
-    ] = False,
+    input_dir: Annotated[Path, typer.Option("--input", "-i", help="Input directory")] = Path("./data/input"),
+    output_dir: Annotated[Path, typer.Option("--output", "-o", help="Output directory")] = Path("./data/output"),
+    strategy: Annotated[str, typer.Option("--strategy", "-s", help="Chunking strategy")] = "recursive",
+    chunk_size: Annotated[int, typer.Option("--chunk-size", "-c", help="Chunk size")] = 512,
+    overlap: Annotated[int, typer.Option("--overlap", help="Overlap size")] = 64,
+    min_chunk_size: Annotated[int, typer.Option("--min-chunk-size", help="Min chunk size")] = 50,
+    report: Annotated[Path, typer.Option("--report", "-r", help="Audit report JSON path")] = Path("rapport_ingestion.json"),
+    benchmark: Annotated[bool, typer.Option("--benchmark", "-b", help="Run benchmark")] = False,
+    verify: Annotated[bool, typer.Option("--verify", "-v", help="Run quality gates verification")] = False,
 ) -> None:
     """RAG Ingestion Pipeline & Quality Audit CLI Engine."""
     if ctx.invoked_subcommand is not None:
         return
     try:
-        if benchmark:
-            _execute_benchmark(
-                input_dir=input_dir,
-                chunk_size=chunk_size,
-                overlap=overlap,
-            )
+        if verify:
+            _execute_verify(report_path=report)
+        elif benchmark:
+            _execute_benchmark(input_dir=input_dir, chunk_size=chunk_size, overlap=overlap)
         else:
-            _execute_run(
-                input_dir=input_dir,
-                output_dir=output_dir,
-                strategy=strategy,
-                chunk_size=chunk_size,
-                overlap=overlap,
-                min_chunk_size=min_chunk_size,
-                report=report,
-            )
+            _execute_run(input_dir, output_dir, strategy, chunk_size, overlap, min_chunk_size, report)
     except typer.Exit:
         raise
     except IngestionError as err:
         console.print(f"[bold red]Ingestion Error:[/bold red] {err}")
         raise typer.Exit(code=1) from err
     except Exception as err:
-        console.print(f"[bold red]Unexpected Error:[/bold red] {err}")
+        console.print(f"[bold red]CLI Error:[/bold red] {err}")
         raise typer.Exit(code=1) from err
 
 
 @app.command()
 def run(
-    input_dir: Annotated[
-        Path,
-        typer.Option(
-            "--input",
-            "-i",
-            help="Directory containing source text/markdown documents",
-        ),
-    ] = Path("./data/input"),
-    output_dir: Annotated[
-        Path,
-        typer.Option(
-            "--output",
-            "-o",
-            help="Output directory for serialized JSONL chunks",
-        ),
-    ] = Path("./data/output"),
-    strategy: Annotated[
-        str,
-        typer.Option(
-            "--strategy",
-            "-s",
-            help="Chunking strategy: 'fixed' or 'recursive'",
-        ),
-    ] = "recursive",
-    chunk_size: Annotated[
-        int,
-        typer.Option(
-            "--chunk-size",
-            "-c",
-            help="Target chunk size in characters/tokens",
-        ),
-    ] = 512,
-    overlap: Annotated[
-        int,
-        typer.Option(
-            "--overlap",
-            help="Overlap character size",
-        ),
-    ] = 64,
-    min_chunk_size: Annotated[
-        int,
-        typer.Option(
-            "--min-chunk-size",
-            help="Minimum character threshold",
-        ),
-    ] = 50,
-    report: Annotated[
-        Path,
-        typer.Option(
-            "--report",
-            "-r",
-            help="Destination file path for global audit report JSON",
-        ),
-    ] = Path("rapport_ingestion.json"),
+    input_dir: Annotated[Path, typer.Option("--input", "-i")] = Path("./data/input"),
+    output_dir: Annotated[Path, typer.Option("--output", "-o")] = Path("./data/output"),
+    strategy: Annotated[str, typer.Option("--strategy", "-s")] = "recursive",
+    chunk_size: Annotated[int, typer.Option("--chunk-size", "-c")] = 512,
+    overlap: Annotated[int, typer.Option("--overlap")] = 64,
+    min_chunk_size: Annotated[int, typer.Option("--min-chunk-size")] = 50,
+    report: Annotated[Path, typer.Option("--report", "-r")] = Path("rapport_ingestion.json"),
 ) -> None:
-    """Execute end-to-end ingestion pipeline and evaluate quality metrics."""
-    try:
-        _execute_run(
-            input_dir=input_dir,
-            output_dir=output_dir,
-            strategy=strategy,
-            chunk_size=chunk_size,
-            overlap=overlap,
-            min_chunk_size=min_chunk_size,
-            report=report,
-        )
-    except typer.Exit:
-        raise
-    except IngestionError as err:
-        console.print(f"[bold red]Ingestion Error:[/bold red] {err}")
-        raise typer.Exit(code=1) from err
-    except Exception as err:
-        console.print(f"[bold red]Unexpected Error:[/bold red] {err}")
-        raise typer.Exit(code=1) from err
+    """Execute end-to-end ingestion pipeline."""
+    _execute_run(input_dir, output_dir, strategy, chunk_size, overlap, min_chunk_size, report)
 
 
 @app.command(name="benchmark")
 def benchmark_cmd(
-    input_dir: Annotated[
-        Path | None,
-        typer.Option(
-            "--input",
-            "-i",
-            help="Directory containing source text/markdown documents",
-        ),
-    ] = None,
-    chunk_size: Annotated[
-        int,
-        typer.Option(
-            "--chunk-size",
-            "-c",
-            help="Target chunk size in characters/tokens",
-        ),
-    ] = 512,
-    overlap: Annotated[
-        int,
-        typer.Option(
-            "--overlap",
-            help="Overlap character size",
-        ),
-    ] = 64,
+    input_dir: Annotated[Path | None, typer.Option("--input", "-i")] = None,
+    chunk_size: Annotated[int, typer.Option("--chunk-size", "-c")] = 512,
+    overlap: Annotated[int, typer.Option("--overlap")] = 64,
 ) -> None:
-    """Run comparative benchmark between fixed and recursive chunking strategies."""
-    try:
-        _execute_benchmark(
-            input_dir=input_dir,
-            chunk_size=chunk_size,
-            overlap=overlap,
-        )
-    except typer.Exit:
-        raise
-    except Exception as err:
-        console.print(f"[bold red]Benchmark Error:[/bold red] {err}")
-        raise typer.Exit(code=1) from err
+    """Run comparative benchmark."""
+    _execute_benchmark(input_dir, chunk_size, overlap)
+
+
+@app.command(name="verify")
+def verify_cmd(
+    report: Annotated[Path, typer.Option("--report", "-r")] = Path("rapport_ingestion.json"),
+) -> None:
+    """Verify code quality gates and final release deliverable."""
+    _execute_verify(report_path=report)
 
 
 if __name__ == "__main__":

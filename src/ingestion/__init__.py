@@ -53,6 +53,7 @@ from ingestion.models import (
     TokenizerType,
 )
 from ingestion.pipeline import IngestionPipeline, PipelineOrchestrator, PipelineResult
+from ingestion.quality_gate import QualityGateResult, QualityGateRunner
 from ingestion.tokenizers import (
     BaseTokenizer,
     GeminiEncoder,
@@ -115,7 +116,10 @@ __all__ = [
     "BenchmarkStrategyMetrics",
     "BenchmarkComparisonResult",
     "StrategyBenchmarkRunner",
+    "QualityGateResult",
+    "QualityGateRunner",
 ]
+
 
 
 
