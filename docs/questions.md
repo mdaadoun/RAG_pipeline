@@ -232,4 +232,20 @@
 ### Q46: How does the orchestrator prepare for Step 6.2 (File-Level Exception Shielding)?
 **Answer:** The `_process_single_file` method already returns a `(Document | None, chunks, report)` tuple where failures produce `None` document + empty chunks + error `DocumentReport`. Step 6.2 only needs to wrap the `try/except` more granularly around each sub-stage (load, clean, chunk) and capture traceback strings into `DocumentReport.errors` — the structural isolation is already in place.
 
+---
+
+### Q47: Why use a separate FileShieldContext accumulator instead of catching exceptions directly in _process_single_file?
+**Answer:** The accumulator pattern separates error collection from control flow. It enables multi-error accumulation (e.g., if future stages run partially), makes shield logic independently testable, and keeps `_process_single_file` readable as a linear stage sequence rather than nested try/except blocks.
+
+---
+
+### Q48: Why catch `Exception` instead of just `IngestionError` at each stage boundary?
+**Answer:** Third-party code (Pydantic validation, file system, tokenizers) can raise non-`IngestionError` exceptions. Catching broad `Exception` at the shield boundary ensures no unexpected error type can crash a batch run. The traceback capture provides full diagnostic context regardless of exception hierarchy.
+
+---
+
+### Q49: What is the trade-off of per-stage shielding vs. the previous monolithic try/except?
+**Answer:** Per-stage shielding adds ~80 LOC of shield methods but provides: (1) pinpoint error attribution to load/clean/chunk/audit, (2) traceback preservation for post-mortem, (3) independent testability of each shield, and (4) future extensibility for partial-success modes where some stages succeed before failure.
+
+
 

@@ -1,13 +1,15 @@
 """Pipeline orchestrator facade coordinating ingestion stages."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from config.logging import get_logger
 from ingestion.chunkers import BaseChunker, FixedSizeChunker, RecursiveStructuralChunker
 from ingestion.cleaner import TextCleaner
-from ingestion.exceptions import DocumentLoadError, IngestionError
-from ingestion.loaders import get_loader
+from ingestion.file_shield import FileShieldContext, IngestionStage
+from ingestion.loaders import DocumentLoader, get_loader
 from ingestion.models import (
     AuditReport,
     Chunk,
@@ -15,6 +17,7 @@ from ingestion.models import (
     DocumentReport,
     IngestionConfig,
     IngestionReport,
+    LoadedDocument,
 )
 from ingestion.monitor import IngestionMonitor
 from ingestion.utils.json_utils import save_audit_report, save_chunks_jsonl
@@ -122,39 +125,125 @@ class PipelineOrchestrator:
     def _process_single_file(
         self, file_path: Path,
     ) -> tuple[Document | None, list[Chunk], DocumentReport]:
-        """Process one file through load → clean → chunk → audit stages."""
-        try:
-            loader = get_loader(file_path)
-        except DocumentLoadError:
-            return None, [], self._error_report(file_path, "Unsupported format")
+        """Process one file through load → clean → chunk → audit stages.
 
+        Each sub-stage is individually shielded so failures record
+        tracebacks into DocumentReport.errors without crashing the batch.
+        """
+        ctx = FileShieldContext(file_path=file_path)
+
+        # Stage: LOAD
+        loader = self._shield_load(file_path, ctx)
+        if loader is None:
+            return None, [], self._error_report(file_path, ctx)
+
+        raw_doc = self._shield_read(loader, file_path, ctx)
+        if raw_doc is None:
+            return None, [], self._error_report(file_path, ctx)
+
+        # Stage: CLEAN
+        cleaned = self._shield_clean(raw_doc.content, file_path, ctx)
+        if cleaned is None:
+            return None, [], self._error_report(file_path, ctx)
+
+        doc = Document(
+            id=raw_doc.id,
+            file_path=raw_doc.file_path,
+            content=cleaned,
+            metadata=raw_doc.metadata,
+        )
+
+        # Stage: CHUNK
+        file_chunks = self._shield_chunk(doc, file_path, ctx)
+        if file_chunks is None:
+            return None, [], self._error_report(file_path, ctx)
+
+        # Stage: AUDIT
+        report = self._shield_audit(doc, file_chunks, ctx)
+        return doc, file_chunks, report
+
+    def _shield_load(
+        self,
+        file_path: Path,
+        ctx: FileShieldContext,
+    ) -> "DocumentLoader | None":
+        """Shield: resolve loader for file extension."""
         try:
-            raw_doc = loader.load()
-            cleaned = self._cleaner.clean(raw_doc.content)
-            doc = Document(
-                id=raw_doc.id,
-                file_path=raw_doc.file_path,
-                content=cleaned,
-                metadata=raw_doc.metadata,
-            )
-            file_chunks = self._chunker.chunk(doc)
-            report = self._monitor.audit_document(
+            return get_loader(file_path)
+        except Exception as exc:
+            ctx.record_error(IngestionStage.LOAD, exc)
+            return None
+
+    def _shield_read(
+        self,
+        loader: "DocumentLoader",
+        file_path: Path,
+        ctx: FileShieldContext,
+    ) -> "LoadedDocument | None":
+        """Shield: read raw document content from disk."""
+        try:
+            return loader.load()
+        except Exception as exc:
+            ctx.record_error(IngestionStage.LOAD, exc)
+            return None
+
+    def _shield_clean(
+        self,
+        raw_content: str,
+        file_path: Path,
+        ctx: FileShieldContext,
+    ) -> str | None:
+        """Shield: clean and normalize raw text."""
+        try:
+            return self._cleaner.clean(raw_content)
+        except Exception as exc:
+            ctx.record_error(IngestionStage.CLEAN, exc)
+            return None
+
+    def _shield_chunk(
+        self,
+        doc: Document,
+        file_path: Path,
+        ctx: FileShieldContext,
+    ) -> list[Chunk] | None:
+        """Shield: chunk cleaned document."""
+        try:
+            return self._chunker.chunk(doc)
+        except Exception as exc:
+            ctx.record_error(IngestionStage.CHUNK, exc)
+            return None
+
+    def _shield_audit(
+        self,
+        doc: Document,
+        file_chunks: list[Chunk],
+        ctx: FileShieldContext,
+    ) -> DocumentReport:
+        """Shield: audit document quality; fallback to error report."""
+        try:
+            return self._monitor.audit_document(
                 document_id=doc.id,
                 source_path=doc.file_path,
                 cleaned_text=doc.content,
                 chunks=file_chunks,
             )
-            return doc, file_chunks, report
-        except IngestionError as exc:
-            return None, [], self._error_report(file_path, exc.message)
+        except Exception as exc:
+            ctx.record_error(IngestionStage.AUDIT, exc)
+            return self._error_report(
+                Path(doc.file_path), ctx,
+            )
 
-    def _error_report(self, file_path: Path, message: str) -> DocumentReport:
-        """Build error DocumentReport for failed file processing."""
+    def _error_report(
+        self,
+        file_path: Path,
+        ctx: FileShieldContext,
+    ) -> DocumentReport:
+        """Build error DocumentReport from accumulated shield context."""
         return DocumentReport(
             document_id=f"error_{file_path.name}",
             source_path=str(file_path),
             status="error",
-            errors=[message],
+            errors=ctx.format_error_messages(),
         )
 
     def _log_summary(

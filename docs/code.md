@@ -11,7 +11,8 @@
   - **`config/logging.py`:** Structured JSON logging configurator using `structlog`.
 - **`src/ingestion/`:** Modular RAG document ingestion pipeline components.
   - **`cli.py`:** Typer CLI entrypoint with Rich UI console tables and exit code gatekeeper.
-  - **`pipeline.py`:** Orchestrator facade driving loaders ──► cleaner ──► chunkers ──► monitor ──► exporters.
+  - **`pipeline.py`:** Orchestrator facade driving loaders ──► cleaner ──► chunkers ──► monitor ──► exporters with per-stage exception shielding.
+  - **`file_shield.py`:** File-level exception shielding primitives (`IngestionStage`, `StageError`, `FileShieldContext`) for per-stage traceback capture.
   - **`models.py`:** Immutable Pydantic domain models (`BaseDomainModel`, `StrategyType`, `IngestionConfig`, `LoadedDocument`, `Chunk`, `DocumentReport`, `IngestionReport`, `IngestionMetrics`, `AuditReport`).
   - **`exceptions.py`:** Hierarchy inheriting from base `IngestionError`.
   - **`loaders.py`:** Abstract loader interface and concrete text/markdown file loaders.
@@ -215,8 +216,13 @@
 - **`PipelineOrchestrator.config -> IngestionConfig`:** Read-only property exposing the pipeline configuration.
 - **`PipelineOrchestrator.run(input_dir, output_dir, report_path) -> PipelineResult`:** Entry point executing full pipeline: resolves paths from config defaults, discovers files, processes corpus, exports JSONL chunks and audit report, creates `IngestionReport`, and returns `PipelineResult`.
 - **`PipelineOrchestrator._process_corpus(input_path) -> tuple[list[Document], list[Chunk], list[DocumentReport]]`:** Iterates all files through `_process_single_file`, collecting documents, chunks, and per-document reports.
-- **`PipelineOrchestrator._process_single_file(file_path) -> tuple[Document | None, list[Chunk], DocumentReport]`:** Processes one file through Load → Clean → Chunk → Audit stages, returning structured result tuple with error shielding for unsupported formats and `IngestionError` exceptions.
-- **`PipelineOrchestrator._error_report(file_path, message) -> DocumentReport`:** Constructs error `DocumentReport` for failed file processing with `status="error"` and error message.
+- **`PipelineOrchestrator._process_single_file(file_path) -> tuple[Document | None, list[Chunk], DocumentReport]`:** Processes one file through Load → Clean → Chunk → Audit stages with per-stage exception shielding via `FileShieldContext`. Each sub-stage is independently wrapped so failures record tracebacks into `DocumentReport.errors` without crashing the batch.
+- **`PipelineOrchestrator._shield_load(file_path, ctx) -> DocumentLoader | None`:** Shield wrapper resolving the loader for a file extension; records `IngestionStage.LOAD` error on failure.
+- **`PipelineOrchestrator._shield_read(loader, file_path, ctx) -> LoadedDocument | None`:** Shield wrapper reading raw document content from disk; records `IngestionStage.LOAD` error on failure.
+- **`PipelineOrchestrator._shield_clean(raw_content, file_path, ctx) -> str | None`:** Shield wrapper running text cleaner; records `IngestionStage.CLEAN` error on failure.
+- **`PipelineOrchestrator._shield_chunk(doc, file_path, ctx) -> list[Chunk] | None`:** Shield wrapper running chunker; records `IngestionStage.CHUNK` error on failure.
+- **`PipelineOrchestrator._shield_audit(doc, file_chunks, ctx) -> DocumentReport`:** Shield wrapper running monitor audit; falls back to error report on `IngestionStage.AUDIT` failure.
+- **`PipelineOrchestrator._error_report(file_path, ctx) -> DocumentReport`:** Constructs error `DocumentReport` from accumulated `FileShieldContext` error messages with `status="error"`.
 - **`PipelineOrchestrator._log_summary(docs, chunks, report)`:** Emits structured log entry with document count, chunk count, coverage ratio, and audit status.
 - **`IngestionPipeline`:** Backward-compatible wrapper converting raw constructor arguments (`strategy_name`, `chunk_size`, `overlap`, `min_chunk_size`) into `IngestionConfig` and delegating to `PipelineOrchestrator`. Returns legacy `AuditReport` from `run()` for CLI compatibility.
 
@@ -233,9 +239,38 @@
 - **`test_orchestrator_skips_unsupported_files()`:** Verifies orchestrator emits error `DocumentReport` for unsupported file types without crashing.
 - **`test_orchestrator_empty_corpus()`:** Verifies orchestrator handles empty input directory gracefully.
 - **`test_orchestrator_fixed_strategy()`:** Verifies orchestrator works with fixed chunking strategy.
-- **`test_error_report_structure()`:** Verifies `_error_report` produces valid `DocumentReport` with error status.
+- **`test_error_report_structure()`:** Verifies `_error_report` produces valid `DocumentReport` with error status using `FileShieldContext`.
 - **`test_legacy_pipeline_returns_audit_report()`:** Verifies `IngestionPipeline` backward-compat returns `AuditReport`.
 - **`test_legacy_pipeline_fixed_strategy()`:** Verifies `IngestionPipeline` wrapper works with fixed strategy.
+
+### File-Level Exception Shielding
+
+#### `src/ingestion/file_shield.py`
+- **`IngestionStage(str, Enum)`:** Named pipeline processing stages (`LOAD`, `CLEAN`, `CHUNK`, `AUDIT`) used to tag errors to their origin.
+- **`StageError`:** Frozen dataclass capturing a single stage failure: `stage` (`IngestionStage`), `error_type` (exception class name), `message` (exception string), and `traceback` (full `traceback.format_exception()` output).
+- **`StageError.format_short() -> str`:** Formats concise single-line error summary as `[stage] ErrorType: message`.
+- **`FileShieldContext`:** Per-file mutable accumulator collecting `StageError` objects from each processing stage.
+- **`FileShieldContext.record_error(stage, exc)`:** Captures exception with full traceback via `traceback.format_exception()` and emits structured log warning.
+- **`FileShieldContext.has_errors -> bool`:** Property checking if any stage recorded an error.
+- **`FileShieldContext.failed_stages -> list[IngestionStage]`:** Property returning the list of stages that failed.
+- **`FileShieldContext.format_error_messages() -> list[str]`:** Formats all errors as short `[stage] ErrorType: message` strings for `DocumentReport.errors`.
+- **`FileShieldContext.format_tracebacks() -> list[str]`:** Returns full traceback strings for post-mortem diagnostics.
+
+#### `tests/unit/test_file_shield.py`
+- **`test_stage_enum_values()`:** Verifies all four pipeline stages are defined with correct string values.
+- **`test_stage_error_frozen()`:** Verifies `StageError` is immutable (rejects field mutation).
+- **`test_stage_error_format_short()`:** Verifies `format_short()` produces concise `[stage] ErrorType: message` string.
+- **`test_context_no_errors()`:** Verifies fresh `FileShieldContext` has no errors and empty formatted output.
+- **`test_context_record_error_captures_traceback()`:** Verifies `record_error()` captures exception traceback string with `Traceback` header.
+- **`test_context_multiple_errors()`:** Verifies context accumulates errors from multiple stages and reports correct `failed_stages`.
+- **`test_context_format_tracebacks()`:** Verifies `format_tracebacks()` returns full traceback strings.
+- **`test_shield_load_unsupported_format()`:** Verifies `_shield_load` records `LOAD` error for unsupported file type.
+- **`test_shield_read_missing_file()`:** Verifies `_shield_read` records `LOAD` error for missing file.
+- **`test_shield_clean_error()`:** Verifies `_shield_clean` records `CLEAN` error on cleaner failure.
+- **`test_shield_chunk_error()`:** Verifies `_shield_chunk` records `CHUNK` error on chunker failure.
+- **`test_shield_audit_error_returns_error_report()`:** Verifies `_shield_audit` returns error `DocumentReport` on monitor failure.
+- **`test_batch_continues_after_file_error()`:** Verifies batch run continues processing valid files after one file fails.
+- **`test_traceback_preserved_in_error_report()`:** Verifies traceback info propagates through `FileShieldContext` to `DocumentReport.errors`.
 
 ### Quality Assurance & Tooling Tests
 

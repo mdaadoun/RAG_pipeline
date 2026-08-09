@@ -15,6 +15,7 @@ from ingestion.exceptions import (
     DocumentLoadError,
     IngestionError,
 )
+from ingestion.file_shield import FileShieldContext, IngestionStage, StageError
 from ingestion.loaders import (
     DocumentLoader,
     MarkdownLoader,
@@ -62,6 +63,9 @@ __all__ = [
     "CleanError",
     "ChunkError",
     "AuditError",
+    "IngestionStage",
+    "StageError",
+    "FileShieldContext",
     "DocumentLoader",
     "TextLoader",
     "MarkdownLoader",

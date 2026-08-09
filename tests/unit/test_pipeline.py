@@ -208,10 +208,15 @@ def test_orchestrator_fixed_strategy(
 
 def test_error_report_structure() -> None:
     """Verify _error_report produces valid DocumentReport."""
+    from ingestion.file_shield import FileShieldContext, IngestionStage
+
     orch = PipelineOrchestrator()
-    rpt = orch._error_report(Path("/fake/file.txt"), "Test error")
+    ctx = FileShieldContext(file_path=Path("/fake/file.txt"))
+    ctx.record_error(IngestionStage.LOAD, ValueError("Test error"))
+    rpt = orch._error_report(Path("/fake/file.txt"), ctx)
     assert rpt.status == "error"
-    assert rpt.errors == ["Test error"]
+    assert len(rpt.errors) == 1
+    assert "Test error" in rpt.errors[0]
     assert "file.txt" in rpt.document_id
 
 

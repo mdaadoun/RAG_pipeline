@@ -203,3 +203,16 @@ Module-level helper performing sorted recursive glob over an input directory, re
 ### Dual Report Model
 Architecture pattern where the pipeline simultaneously produces a legacy `AuditReport` (aggregate corpus metrics for CLI pass/fail gating) and a detailed `IngestionReport` (per-document `DocumentReport` list for diagnostics and UI rendering).
 
+### FileShieldContext
+Per-file mutable accumulator that collects `StageError` objects from each processing stage, providing error formatting and traceback retrieval.
+
+### StageError
+Frozen dataclass capturing a single stage failure: stage name, exception type, message, and full traceback string.
+
+### IngestionStage
+Enum of named pipeline processing stages (`LOAD`, `CLEAN`, `CHUNK`, `AUDIT`) used to tag errors to their origin.
+
+### Exception Shielding
+Design pattern where each sub-operation is wrapped in its own `try/except` block to prevent one failure from cascading and crashing the entire batch.
+
+
