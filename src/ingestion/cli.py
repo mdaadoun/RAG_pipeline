@@ -5,14 +5,13 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
 
 from config.logging import setup_logging
 from config.settings import get_settings
+from ingestion.console import RichConsoleRenderer
 from ingestion.exceptions import IngestionError
-from ingestion.models import StrategyType
-from ingestion.pipeline import IngestionPipeline
+from ingestion.models import IngestionConfig, StrategyType
+from ingestion.pipeline import PipelineOrchestrator
 
 app = typer.Typer(
     name="ingest",
@@ -89,46 +88,29 @@ def run(
                 f"Invalid strategy '{strategy}'. Valid choices: fixed, recursive"
             )
 
-        console.print(
-            Panel.fit(
-                f"[bold blue]RAG Ingestion Pipeline Engine[/bold blue]\n"
-                f"Strategy: [cyan]{strategy}[/cyan] | Input: [yellow]{input_dir}[/yellow]",
-                title="⚡ Ingestion Pipeline Launch",
-            )
-        )
+        renderer = RichConsoleRenderer(console)
+        console.print(renderer.render_header(strategy, input_dir))
 
-        pipeline = IngestionPipeline(
-            strategy_name=strategy,
+        config = IngestionConfig(
+            strategy=StrategyType(strategy),
             chunk_size=chunk_size,
             overlap=overlap,
             min_chunk_size=min_chunk_size,
+            input_dir=str(input_dir),
+            output_dir=str(output_dir),
+            report_path=str(report),
         )
 
-        audit_report = pipeline.run(
+        orchestrator = PipelineOrchestrator(config)
+        result = orchestrator.run(
             input_dir=input_dir,
             output_dir=output_dir,
             report_path=report,
         )
 
-        m = audit_report.metrics
-        table = Table(title="📈 Ingestion Audit Results Summary")
-        table.add_column("Metric", style="cyan", no_wrap=True)
-        table.add_column("Value", style="magenta")
+        renderer.render_pipeline_result(result)
 
-        table.add_row("Total Input Docs", str(m.total_docs))
-        table.add_row("Total Output Chunks", str(m.total_chunks))
-        table.add_row("Coverage Ratio", f"{m.char_coverage_ratio * 100:.2f}%")
-        table.add_row("Orphan Block Count", str(m.orphan_block_count))
-        table.add_row(
-            "Audit Status",
-            "[bold green]PASSED[/bold green]"
-            if m.status == "PASSED"
-            else "[bold red]FAILED[/bold red]",
-        )
-
-        console.print(table)
-
-        if m.status != "PASSED":
+        if result.audit_report.metrics.status != "PASSED":
             console.print("[bold red]CRITICAL: Quality gates failed![/bold red]")
             raise typer.Exit(code=1)
 

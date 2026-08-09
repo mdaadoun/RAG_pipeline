@@ -292,11 +292,24 @@
 - **`test_audit_report_exporter_missing_files()`:** Ensures `AuditError` is raised when reading missing JSON report files.
 - **`test_procedural_export_helpers()`:** Tests `export_chunks_jsonl` and `export_audit_report` procedural helper functions.
 
-### Typer CLI Commands
+### Typer CLI Commands & Rich Console UI
+
+#### `src/ingestion/console.py`
+- **`RichConsoleRenderer`:** Formatter class encapsulating Rich panel and table rendering logic for CLI terminal output.
+  - **`render_header(strategy, input_dir) -> Panel`:** Constructs colorful launch status panel with active strategy and input directory.
+  - **`render_document_table(doc_reports) -> Table`:** Constructs per-file audit status table displaying filename, chunk count, coverage percentage, orphan block count, token delta, and status tag with conditional color formatting (green/yellow/red).
+  - **`render_summary_table(audit_report, ingestion_report) -> Table`:** Constructs global audit metric summary table displaying input docs, total output chunks, coverage ratio, orphan count, documents in error, and overall status.
+  - **`render_pipeline_result(result) -> None`:** Executes complete output rendering pass displaying breakdown and summary tables to console.
 
 #### `src/ingestion/cli.py`
 - **`app`:** Main `typer.Typer` application instance registered as CLI entrypoint `ingest`.
-- **`run(...)`:** Main CLI command handling CLI options (`--input`, `--output`, `--strategy`, `--chunk-size`, `--overlap`, `--min-chunk-size`, `--report`), invoking `IngestionPipeline`, rendering Rich UI launch panel and audit summary table, and handling exit code quality gates (`code=1`).
+- **`run(...)`:** Main CLI command handling options (`--input`, `--output`, `--strategy`, `--chunk-size`, `--overlap`, `--min-chunk-size`, `--report`), instantiating `PipelineOrchestrator`, delegating rendering to `RichConsoleRenderer`, and enforcing exit code quality gates (`code=1`).
+
+#### `tests/unit/test_console.py`
+- **`test_render_header()`:** Verifies header panel contains pipeline title and active strategy parameters.
+- **`test_render_document_table()`:** Verifies per-file audit breakdown table header columns and document data rendering.
+- **`test_render_summary_table()`:** Verifies global aggregate audit metrics table formatting and values.
+- **`test_render_pipeline_result_output()`:** Verifies console result output capturing rendered breakdown and summary tables.
 
 #### `tests/unit/test_cli.py`
 - **`test_cli_help()`:** Verifies `CliRunner` invocation with `--help` renders all option flags and documentation.

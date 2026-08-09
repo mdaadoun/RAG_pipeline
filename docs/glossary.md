@@ -235,3 +235,12 @@ Python typing construct (`typing.Annotated`) used by Typer to attach CLI option 
 
 ### Quality Gate Exit Code
 Non-zero exit code (`1`) raised via `typer.Exit` when ingestion audit status fails, enabling CI/CD pipeline blocking.
+
+### Rich Console Renderer
+A dedicated presentation component leveraging the Rich library to format structured domain reports into visually rich status tables and panels.
+
+### Per-Document Breakdown Table
+A tabular terminal visualizer detailing per-file document coverage, chunk counts, orphan block counts, token deltas, and status indicators.
+
+### Conditional Style Formatting
+Dynamic terminal text styling where cell colors (green, yellow, red) automatically adapt based on threshold bounds of metrics like character coverage or orphan counts.

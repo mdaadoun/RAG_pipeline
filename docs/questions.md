@@ -276,3 +276,18 @@
 
 ### Q55: How does exception shielding operate at the CLI layer?
 **Answer:** The CLI wraps pipeline execution in a top-level try-except block. `IngestionError` exceptions and general runtime errors are captured, formatted into Rich red error panels, and translated to exit code 1 to prevent unhandled Python tracebacks.
+
+---
+
+### Q56: Why separate the Rich console rendering logic into a distinct `RichConsoleRenderer` class instead of embedding it directly inside `cli.py`?
+**Answer:** Separating console formatting logic into `RichConsoleRenderer` adheres to the Single Responsibility Principle and strict presentation layer isolation. It allows unit testing of terminal renderables (tables, panels, status colors) independently of CLI argument parsing and process exit code handling.
+
+---
+
+### Q57: How does the per-document breakdown table assist developers in diagnosing information loss during RAG ingestion?
+**Answer:** The breakdown table exposes file-level metrics such as character coverage ratio, orphan block counts, and token count deltas in real-time. If a specific document drops below 98% coverage or generates orphan table splits, developers can pinpoint the exact failing source file immediately without digging through raw JSON log files.
+
+---
+
+### Q58: How are color styles determined for metrics like character coverage and orphan block counts in the terminal output?
+**Answer:** Metrics use dynamic threshold rule formatting: character coverage ratio $\ge 98\%$ is styled green, $90-97\%$ is styled yellow, and $<90\%$ is styled red. Orphan block counts of 0 are styled green, while any non-zero orphan block count is formatted in bold red to highlight structural fragmentation.

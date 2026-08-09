@@ -7,6 +7,7 @@ from ingestion.chunkers import (
     RecursiveStructuralChunker,
 )
 from ingestion.cleaner import TextCleaner
+from ingestion.console import RichConsoleRenderer
 from ingestion.detector import OrphanBlockDetector, StructuralBlock
 from ingestion.exceptions import (
     AuditError,
@@ -99,6 +100,7 @@ __all__ = [
     "PipelineOrchestrator",
     "PipelineResult",
     "IngestionPipeline",
+    "RichConsoleRenderer",
 ]
 
 
