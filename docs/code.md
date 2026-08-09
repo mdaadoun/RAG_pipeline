@@ -205,6 +205,37 @@
 - **`test_undersized_chunks_ratio_calculation()`:** Validates undersized chunk ratio computation against `min_chunk_size`.
 - **`test_create_ingestion_report_with_blocking_alerts()`:** Verifies `IngestionReport` correctly sets `has_blocking_alerts` when error documents exist.
 
+### Pipeline Orchestrator Facade
+
+#### `src/ingestion/pipeline.py`
+- **`PipelineResult`:** Frozen `@dataclass` bundling `audit_report` (`AuditReport`), `ingestion_report` (`IngestionReport`), `documents` (`list[Document]`), `chunks` (`list[Chunk]`), and `doc_reports` (`list[DocumentReport]`) as unified pipeline output.
+- **`_build_chunker(config: IngestionConfig) -> BaseChunker`:** Module-level factory selecting `FixedSizeChunker` or `RecursiveStructuralChunker` based on `config.strategy` enum, injecting `config.tokenizer` name into the chunker.
+- **`_discover_files(input_path: Path) -> list[Path]`:** Sorted recursive glob returning all regular files under the input directory for deterministic processing order.
+- **`PipelineOrchestrator.__init__(config: IngestionConfig | None = None)`:** Initializes `TextCleaner`, `BaseChunker` (via `_build_chunker`), and `IngestionMonitor` (with `coverage_threshold` from config).
+- **`PipelineOrchestrator.config -> IngestionConfig`:** Read-only property exposing the pipeline configuration.
+- **`PipelineOrchestrator.run(input_dir, output_dir, report_path) -> PipelineResult`:** Entry point executing full pipeline: resolves paths from config defaults, discovers files, processes corpus, exports JSONL chunks and audit report, creates `IngestionReport`, and returns `PipelineResult`.
+- **`PipelineOrchestrator._process_corpus(input_path) -> tuple[list[Document], list[Chunk], list[DocumentReport]]`:** Iterates all files through `_process_single_file`, collecting documents, chunks, and per-document reports.
+- **`PipelineOrchestrator._process_single_file(file_path) -> tuple[Document | None, list[Chunk], DocumentReport]`:** Processes one file through Load → Clean → Chunk → Audit stages, returning structured result tuple with error shielding for unsupported formats and `IngestionError` exceptions.
+- **`PipelineOrchestrator._error_report(file_path, message) -> DocumentReport`:** Constructs error `DocumentReport` for failed file processing with `status="error"` and error message.
+- **`PipelineOrchestrator._log_summary(docs, chunks, report)`:** Emits structured log entry with document count, chunk count, coverage ratio, and audit status.
+- **`IngestionPipeline`:** Backward-compatible wrapper converting raw constructor arguments (`strategy_name`, `chunk_size`, `overlap`, `min_chunk_size`) into `IngestionConfig` and delegating to `PipelineOrchestrator`. Returns legacy `AuditReport` from `run()` for CLI compatibility.
+
+#### `tests/unit/test_pipeline.py`
+- **`test_build_chunker_fixed()`:** Verifies fixed strategy config produces `FixedSizeChunker`.
+- **`test_build_chunker_recursive_default()`:** Verifies default config produces `RecursiveStructuralChunker`.
+- **`test_discover_files_empty_dir()`:** Verifies empty directory returns no files.
+- **`test_discover_files_recursive()`:** Verifies recursive file discovery under nested directories.
+- **`test_pipeline_result_immutable()`:** Verifies `PipelineResult` frozen dataclass rejects field mutation.
+- **`test_orchestrator_default_config()`:** Verifies orchestrator initializes with default `IngestionConfig`.
+- **`test_orchestrator_custom_config()`:** Verifies orchestrator accepts custom `IngestionConfig`.
+- **`test_orchestrator_run_with_fixtures()`:** Verifies full orchestrator run produces output files and valid `PipelineResult`.
+- **`test_orchestrator_ingestion_report_populated()`:** Verifies `IngestionReport` is populated with per-document details.
+- **`test_orchestrator_skips_unsupported_files()`:** Verifies orchestrator emits error `DocumentReport` for unsupported file types without crashing.
+- **`test_orchestrator_empty_corpus()`:** Verifies orchestrator handles empty input directory gracefully.
+- **`test_orchestrator_fixed_strategy()`:** Verifies orchestrator works with fixed chunking strategy.
+- **`test_error_report_structure()`:** Verifies `_error_report` produces valid `DocumentReport` with error status.
+- **`test_legacy_pipeline_returns_audit_report()`:** Verifies `IngestionPipeline` backward-compat returns `AuditReport`.
+- **`test_legacy_pipeline_fixed_strategy()`:** Verifies `IngestionPipeline` wrapper works with fixed strategy.
 
 ### Quality Assurance & Tooling Tests
 

@@ -181,3 +181,25 @@ Audit technique that subtracts token counts of overlapping character regions bet
 ### Undersized Chunks Ratio (`undersized_chunks_ratio`)
 The proportion of generated document chunks whose token count is lower than configured minimum chunk size threshold (`min_chunk_size`).
 
+---
+
+## 🔧 3. Pipeline Orchestration & Facade
+
+### PipelineOrchestrator
+Facade class coordinating all ingestion stages (Loaders → Cleaner → Chunkers → Monitor → Exporters) via a single typed `IngestionConfig`, returning an immutable `PipelineResult`.
+
+### PipelineResult
+Immutable frozen dataclass returned by `PipelineOrchestrator.run()`, bundling `audit_report`, `ingestion_report`, `documents`, `chunks`, and `doc_reports` as unified pipeline output.
+
+### Facade Pattern
+Structural design pattern providing a simplified interface to a complex subsystem of classes (here: loaders, cleaner, chunkers, monitor, exporters) behind a single entry point.
+
+### `_build_chunker`
+Module-level factory function selecting and instantiating the correct `ChunkingStrategy` subclass (`FixedSizeChunker` or `RecursiveStructuralChunker`) with tokenizer injection based on `IngestionConfig.strategy` and `IngestionConfig.tokenizer` enum values.
+
+### `_discover_files`
+Module-level helper performing sorted recursive glob over an input directory, returning all regular files for deterministic processing order.
+
+### Dual Report Model
+Architecture pattern where the pipeline simultaneously produces a legacy `AuditReport` (aggregate corpus metrics for CLI pass/fail gating) and a detailed `IngestionReport` (per-document `DocumentReport` list for diagnostics and UI rendering).
+

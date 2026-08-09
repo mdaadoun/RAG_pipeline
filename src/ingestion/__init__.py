@@ -36,6 +36,7 @@ from ingestion.models import (
     StrategyType,
     TokenizerType,
 )
+from ingestion.pipeline import IngestionPipeline, PipelineOrchestrator, PipelineResult
 from ingestion.tokenizers import (
     BaseTokenizer,
     GeminiEncoder,
@@ -79,6 +80,9 @@ __all__ = [
     "RecursiveStructuralChunker",
     "OrphanBlockDetector",
     "StructuralBlock",
+    "PipelineOrchestrator",
+    "PipelineResult",
+    "IngestionPipeline",
 ]
 
 

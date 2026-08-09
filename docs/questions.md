@@ -217,4 +217,19 @@
 ### Q43: How does `IngestionMonitor` support multi-model token counting abstractions?
 **Answer:** `IngestionMonitor` accepts dependency injection of `BaseTokenizer` instances (e.g. `GeminiEncoder`, `TiktokenEncoder`, `HeuristicTokenizer`), enabling model-agnostic token counting and exact metric calculation.
 
+---
+
+### Q44: Why does the PipelineOrchestrator produce both an AuditReport and an IngestionReport?
+**Answer:** `AuditReport` (legacy) provides aggregate corpus-level metrics (`total_docs`, `total_chunks`, `coverage`, `status`) used by the existing CLI for pass/fail gating. `IngestionReport` adds per-document detail (`DocumentReport` list with per-file coverage, orphan counts, error traces) needed for fine-grained diagnostics and future UI dashboards. Producing both avoids breaking the CLI contract while enabling richer downstream consumers.
+
+---
+
+### Q45: Why is PipelineResult a frozen dataclass instead of a Pydantic BaseDomainModel?
+**Answer:** `PipelineResult` contains runtime-constructed lists of `Documents`, `Chunks`, and `DocumentReports` that are already Pydantic models. Making `PipelineResult` itself a Pydantic model would introduce circular import risk (`pipeline.py` imports `models.py` which would need to import `PipelineResult`). A frozen dataclass achieves immutability without Pydantic overhead and keeps `pipeline.py` self-contained as a pure orchestration layer.
+
+---
+
+### Q46: How does the orchestrator prepare for Step 6.2 (File-Level Exception Shielding)?
+**Answer:** The `_process_single_file` method already returns a `(Document | None, chunks, report)` tuple where failures produce `None` document + empty chunks + error `DocumentReport`. Step 6.2 only needs to wrap the `try/except` more granularly around each sub-stage (load, clean, chunk) and capture traceback strings into `DocumentReport.errors` — the structural isolation is already in place.
+
 
