@@ -115,3 +115,60 @@ def test_cli_empty_directory(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Total Input Docs" in result.output
+
+
+def test_cli_gatekeeper_exit_code_1_on_fixed_strategy_table_split(
+    fixtures_dir: Path, tmp_path: Path
+) -> None:
+    """Verify CLI gatekeeper exits with code 1 when fixed chunking splits table blocks."""
+    output_dir = tmp_path / "out_fixed"
+    report_file = tmp_path / "report_fixed.json"
+
+    result = runner.invoke(
+        app,
+        [
+            "--input",
+            str(fixtures_dir),
+            "--output",
+            str(output_dir),
+            "--report",
+            str(report_file),
+            "--strategy",
+            "fixed",
+            "--chunk-size",
+            "60",
+            "--overlap",
+            "10",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "CRITICAL: Quality gates failed!" in result.output
+    assert "Detected" in result.output or "Audit metric status" in result.output
+
+
+def test_cli_gatekeeper_exit_code_0_on_recursive_strategy(
+    fixtures_dir: Path, tmp_path: Path
+) -> None:
+    """Verify CLI gatekeeper exits with code 0 on recursive structural chunking."""
+    output_dir = tmp_path / "out_rec"
+    report_file = tmp_path / "report_rec.json"
+
+    result = runner.invoke(
+        app,
+        [
+            "--input",
+            str(fixtures_dir),
+            "--output",
+            str(output_dir),
+            "--report",
+            str(report_file),
+            "--strategy",
+            "recursive",
+            "--chunk-size",
+            "512",
+        ],
+    )
+
+    assert result.exit_code == 0
+

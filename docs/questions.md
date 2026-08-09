@@ -291,3 +291,19 @@
 
 ### Q58: How are color styles determined for metrics like character coverage and orphan block counts in the terminal output?
 **Answer:** Metrics use dynamic threshold rule formatting: character coverage ratio $\ge 98\%$ is styled green, $90-97\%$ is styled yellow, and $<90\%$ is styled red. Orphan block counts of 0 are styled green, while any non-zero orphan block count is formatted in bold red to highlight structural fragmentation.
+
+---
+
+### Q59: Why isolate `ExitCodeGatekeeper` into a dedicated module rather than embedding checks directly in the Typer command?
+**Answer:** Separating `ExitCodeGatekeeper` decouples presentation concerns (Typer/Rich) from domain quality policy rules. This enables direct unit testing of gate policies, clean architectural layer isolation, and reusability in headless workers or API services.
+
+---
+
+### Q60: How does the gatekeeper distinguish between non-blocking warnings and CI-breaking alerts?
+**Answer:** Non-blocking warnings (such as minor duplicate token overlaps) allow execution to proceed with exit code 0. Blocking alerts (orphaned table splits, low coverage $< 0.98$, document reading errors) flag `has_blocking_alerts=True` and force exit code 1 to halt downstream build steps.
+
+---
+
+### Q61: What happens if a batch run processes 100 documents and a single file suffers a parsing error?
+**Answer:** The `FileShieldContext` isolates the error for that single document so the remaining 99 documents complete loading. However, `documents_in_error` becomes $> 0$, setting `has_blocking_alerts=True`, causing the `ExitCodeGatekeeper` to reject the build with exit code 1.
+

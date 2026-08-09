@@ -244,3 +244,12 @@ A tabular terminal visualizer detailing per-file document coverage, chunk counts
 
 ### Conditional Style Formatting
 Dynamic terminal text styling where cell colors (green, yellow, red) automatically adapt based on threshold bounds of metrics like character coverage or orphan counts.
+
+### Exit Code Gatekeeper
+Automated pipeline evaluation mechanism that returns process exit code `0` on quality pass or non-zero code `1` on blocking alerts to control CI/CD execution status.
+
+### Quality Gate
+Pre-defined numerical or structural criteria (e.g. 98% coverage threshold, zero orphan blocks, zero document load errors) required for corpus ingestion approval.
+
+### Blocking Alert
+Critical data quality failure condition such as fragmented markdown tables or parsing exceptions that invalidates RAG corpus validity.

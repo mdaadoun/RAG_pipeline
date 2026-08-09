@@ -24,6 +24,7 @@ from ingestion.exporters import (
     export_chunks_jsonl,
 )
 from ingestion.file_shield import FileShieldContext, IngestionStage, StageError
+from ingestion.gatekeeper import ExitCodeGatekeeper
 from ingestion.loaders import (
     DocumentLoader,
     MarkdownLoader,
@@ -101,6 +102,7 @@ __all__ = [
     "PipelineResult",
     "IngestionPipeline",
     "RichConsoleRenderer",
+    "ExitCodeGatekeeper",
 ]
 
 

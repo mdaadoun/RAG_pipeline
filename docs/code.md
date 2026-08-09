@@ -292,7 +292,13 @@
 - **`test_audit_report_exporter_missing_files()`:** Ensures `AuditError` is raised when reading missing JSON report files.
 - **`test_procedural_export_helpers()`:** Tests `export_chunks_jsonl` and `export_audit_report` procedural helper functions.
 
-### Typer CLI Commands & Rich Console UI
+### Typer CLI Commands, Rich Console UI & Gatekeeper
+
+#### `src/ingestion/gatekeeper.py`
+- **`ExitCodeGatekeeper`:** Evaluates `PipelineResult` quality metrics against thresholds to determine process exit code for CI/CD builds.
+  - **`evaluate(result) -> int`:** Returns exit code `0` if quality gates pass, `1` if blocking alerts exist.
+  - **`should_exit(result) -> bool`:** Evaluates `has_blocking_alerts`, audit status (`PASSED`/`FAILED`), document errors count, and character coverage threshold.
+  - **`get_blocking_reasons(result) -> list[str]`:** Collects human-readable failure explanations (orphan block counts, processing errors, low coverage percentage) for terminal formatting.
 
 #### `src/ingestion/console.py`
 - **`RichConsoleRenderer`:** Formatter class encapsulating Rich panel and table rendering logic for CLI terminal output.
@@ -303,7 +309,16 @@
 
 #### `src/ingestion/cli.py`
 - **`app`:** Main `typer.Typer` application instance registered as CLI entrypoint `ingest`.
-- **`run(...)`:** Main CLI command handling options (`--input`, `--output`, `--strategy`, `--chunk-size`, `--overlap`, `--min-chunk-size`, `--report`), instantiating `PipelineOrchestrator`, delegating rendering to `RichConsoleRenderer`, and enforcing exit code quality gates (`code=1`).
+- **`run(...)`:** Main CLI command handling options (`--input`, `--output`, `--strategy`, `--chunk-size`, `--overlap`, `--min-chunk-size`, `--report`), instantiating `PipelineOrchestrator`, delegating rendering to `RichConsoleRenderer`, and enforcing exit code quality gates via `ExitCodeGatekeeper` (`code=1`).
+
+#### `tests/unit/test_gatekeeper.py`
+- **`test_gatekeeper_pass_clean_result()`:** Verifies clean pipeline result returns exit code 0 and empty blocking reasons list.
+- **`test_gatekeeper_fail_has_blocking_alerts()`:** Confirms `has_blocking_alerts=True` returns exit code 1.
+- **`test_gatekeeper_fail_audit_metrics_status_failed()`:** Validates status `FAILED` triggers gate failure.
+- **`test_gatekeeper_fail_documents_in_error()`:** Ensures processing errors produce non-zero exit code and explicit reason.
+- **`test_gatekeeper_fail_orphan_blocks()`:** Validates orphaned Markdown table or code block detection returns exit code 1.
+- **`test_gatekeeper_fail_low_coverage()`:** Verifies coverage dropping below threshold triggers exit code 1.
+- **`test_gatekeeper_generic_blocking_fallback()`:** Tests fallback message when generic blocking alert flag is set.
 
 #### `tests/unit/test_console.py`
 - **`test_render_header()`:** Verifies header panel contains pipeline title and active strategy parameters.
@@ -317,6 +332,8 @@
 - **`test_cli_run_custom_parameters()`:** Verifies CLI execution with explicit strategy and chunking option overrides.
 - **`test_cli_invalid_strategy()`:** Ensures invalid strategy options raise `IngestionError` and exit with non-zero code 1.
 - **`test_cli_empty_directory()`:** Confirms CLI handles empty input directories cleanly without errors.
+- **`test_cli_gatekeeper_exit_code_1_on_fixed_strategy_table_split()`:** Confirms CLI gatekeeper exits with code 1 when fixed chunking strategy splits Markdown table blocks.
+- **`test_cli_gatekeeper_exit_code_0_on_recursive_strategy()`:** Confirms CLI gatekeeper exits with code 0 on recursive structural chunking.
 
 ### Quality Assurance & Tooling Tests
 

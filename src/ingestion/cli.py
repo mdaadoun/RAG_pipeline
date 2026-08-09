@@ -10,6 +10,7 @@ from config.logging import setup_logging
 from config.settings import get_settings
 from ingestion.console import RichConsoleRenderer
 from ingestion.exceptions import IngestionError
+from ingestion.gatekeeper import ExitCodeGatekeeper
 from ingestion.models import IngestionConfig, StrategyType
 from ingestion.pipeline import PipelineOrchestrator
 
@@ -110,9 +111,12 @@ def run(
 
         renderer.render_pipeline_result(result)
 
-        if result.audit_report.metrics.status != "PASSED":
+        gatekeeper = ExitCodeGatekeeper(coverage_threshold=config.coverage_threshold)
+        if gatekeeper.should_exit(result):
             console.print("[bold red]CRITICAL: Quality gates failed![/bold red]")
-            raise typer.Exit(code=1)
+            for reason in gatekeeper.get_blocking_reasons(result):
+                console.print(f"[bold red] - {reason}[/bold red]")
+            raise typer.Exit(code=gatekeeper.evaluate(result))
 
     except typer.Exit:
         raise
