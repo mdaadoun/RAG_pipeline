@@ -1,7 +1,4 @@
-"""Chunking strategies using dependency-injected model-agnostic tokenizers.
-
-Backward-compatible re-exports from ingestion.strategies subpackage.
-"""
+"""Strategy pattern package for chunking algorithms."""
 
 from ingestion.strategies.base import BaseChunker, ChunkingStrategy
 from ingestion.strategies.fixed import FixedSizeChunker

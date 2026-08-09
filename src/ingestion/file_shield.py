@@ -1,6 +1,7 @@
 """File-level exception shielding for per-stage ingestion errors."""
 
 import traceback
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -83,3 +84,16 @@ class FileShieldContext:
     def format_tracebacks(self) -> list[str]:
         """Return full traceback strings for diagnostics."""
         return [e.traceback for e in self.errors]
+
+
+def shield_stage(
+    stage: IngestionStage,
+    func: Callable[[], T],
+    ctx: FileShieldContext,
+) -> T | None:
+    """Execute function safely within stage context recording any exceptions."""
+    try:
+        return func()
+    except Exception as exc:
+        ctx.record_error(stage, exc)
+        return None

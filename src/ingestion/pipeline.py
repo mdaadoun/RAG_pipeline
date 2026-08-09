@@ -9,7 +9,7 @@ from config.logging import get_logger
 from ingestion.chunkers import BaseChunker, FixedSizeChunker, RecursiveStructuralChunker
 from ingestion.cleaner import TextCleaner
 from ingestion.exporters import AuditReportExporter, JSONLChunkExporter
-from ingestion.file_shield import FileShieldContext, IngestionStage
+from ingestion.file_shield import FileShieldContext, IngestionStage, shield_stage
 from ingestion.loaders import DocumentLoader, get_loader
 from ingestion.models import (
     AuditReport,
@@ -150,38 +150,26 @@ class PipelineOrchestrator:
     def _shield_load(
         self, file_path: Path, ctx: FileShieldContext
     ) -> DocumentLoader | None:
-        try:
-            return get_loader(file_path)
-        except Exception as exc:
-            ctx.record_error(IngestionStage.LOAD, exc)
-            return None
+        return shield_stage(IngestionStage.LOAD, lambda: get_loader(file_path), ctx)
 
     def _shield_read(
         self, loader: DocumentLoader, file_path: Path, ctx: FileShieldContext
     ) -> LoadedDocument | None:
-        try:
-            return loader.load()
-        except Exception as exc:
-            ctx.record_error(IngestionStage.LOAD, exc)
-            return None
+        return shield_stage(IngestionStage.LOAD, lambda: loader.load(), ctx)
 
     def _shield_clean(
         self, raw_content: str, file_path: Path, ctx: FileShieldContext
     ) -> str | None:
-        try:
-            return self._cleaner.clean(raw_content)
-        except Exception as exc:
-            ctx.record_error(IngestionStage.CLEAN, exc)
-            return None
+        return shield_stage(
+            IngestionStage.CLEAN, lambda: self._cleaner.clean(raw_content), ctx
+        )
 
     def _shield_chunk(
         self, doc: Document, file_path: Path, ctx: FileShieldContext
     ) -> list[Chunk] | None:
-        try:
-            return self._chunker.chunk(doc)
-        except Exception as exc:
-            ctx.record_error(IngestionStage.CHUNK, exc)
-            return None
+        return shield_stage(
+            IngestionStage.CHUNK, lambda: self._chunker.chunk(doc), ctx
+        )
 
     def _shield_audit(
         self, doc: Document, file_chunks: list[Chunk], ctx: FileShieldContext
