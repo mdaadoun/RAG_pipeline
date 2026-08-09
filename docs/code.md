@@ -292,6 +292,19 @@
 - **`test_audit_report_exporter_missing_files()`:** Ensures `AuditError` is raised when reading missing JSON report files.
 - **`test_procedural_export_helpers()`:** Tests `export_chunks_jsonl` and `export_audit_report` procedural helper functions.
 
+### Typer CLI Commands
+
+#### `src/ingestion/cli.py`
+- **`app`:** Main `typer.Typer` application instance registered as CLI entrypoint `ingest`.
+- **`run(...)`:** Main CLI command handling CLI options (`--input`, `--output`, `--strategy`, `--chunk-size`, `--overlap`, `--min-chunk-size`, `--report`), invoking `IngestionPipeline`, rendering Rich UI launch panel and audit summary table, and handling exit code quality gates (`code=1`).
+
+#### `tests/unit/test_cli.py`
+- **`test_cli_help()`:** Verifies `CliRunner` invocation with `--help` renders all option flags and documentation.
+- **`test_cli_run_success()`:** Verifies successful pipeline execution with default CLI options over test corpus fixtures.
+- **`test_cli_run_custom_parameters()`:** Verifies CLI execution with explicit strategy and chunking option overrides.
+- **`test_cli_invalid_strategy()`:** Ensures invalid strategy options raise `IngestionError` and exit with non-zero code 1.
+- **`test_cli_empty_directory()`:** Confirms CLI handles empty input directories cleanly without errors.
+
 ### Quality Assurance & Tooling Tests
 
 #### `tests/unit/test_structure.py`

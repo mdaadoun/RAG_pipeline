@@ -227,5 +227,11 @@ Exporter module responsible for formatting and serializing `AuditReport` and `In
 ### Round-trip Deserialization
 The process of reading exported JSON/JSONL artifacts back into strongly typed Pydantic domain models to verify serialization losslessness and schema adherence.
 
+### Typer CLI
+A modern Python library for building command line interface applications based on Python type hints.
 
+### Annotated Metadata
+Python typing construct (`typing.Annotated`) used by Typer to attach CLI option flags, short aliases, and help docstrings to function parameters.
 
+### Quality Gate Exit Code
+Non-zero exit code (`1`) raised via `typer.Exit` when ingestion audit status fails, enabling CI/CD pipeline blocking.

@@ -117,7 +117,9 @@ def test_jsonl_chunk_exporter_stream(
     output_file = tmp_path / "stream_chunks.jsonl"
     exporter = JSONLChunkExporter()
 
-    def chunk_generator():
+    from collections.abc import Iterator
+
+    def chunk_generator() -> Iterator[Chunk]:
         yield from sample_chunks
 
     exporter.export_stream(chunk_generator(), output_file)

@@ -262,6 +262,17 @@
 ### Q52: How is backward compatibility preserved when introducing exporter classes into existing code?
 **Answer:** Legacy helper functions `save_chunks_jsonl` and `save_audit_report` in `json_utils.py` were updated to delegate directly to `export_chunks_jsonl()` and `export_audit_report()`. This maintains 100% API compatibility for CLI and legacy orchestrator callers.
 
+---
 
+### Q53: Why use Typer and Rich for building batch ingestion pipeline CLIs?
+**Answer:** Typer provides strongly typed parameter parsing and automated help generation using Python type annotations. Combined with Rich, it offers human-readable status tables and progress indicators, improving developer experience and batch visibility.
 
+---
 
+### Q54: How are CI/CD quality gate failures handled by the CLI?
+**Answer:** When the audit report metrics evaluate to FAILED (e.g. coverage threshold missed or orphan blocks detected), the CLI prints a critical alert and explicitly raises `typer.Exit(code=1)`, breaking downstream pipeline stages.
+
+---
+
+### Q55: How does exception shielding operate at the CLI layer?
+**Answer:** The CLI wraps pipeline execution in a top-level try-except block. `IngestionError` exceptions and general runtime errors are captured, formatted into Rich red error panels, and translated to exit code 1 to prevent unhandled Python tracebacks.
